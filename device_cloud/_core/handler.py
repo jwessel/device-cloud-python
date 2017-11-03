@@ -991,9 +991,7 @@ class Handler(object):
         Notify that a message has been published
         """
 
-        if self.qos_level == 0:
-            pass
-        else:
+        if self.reply_tracker != {}:
             topic_num = self.reply_tracker.pop_mid(mid)
             self.logger.debug("MQTT sent %s", topic_num)
 
