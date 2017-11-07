@@ -197,6 +197,10 @@ def file_download(client, params, user_data):
     file_name = None
     file_path = None
     result = None
+    timeout = 15
+    if hasattr(config, "download_timeout"):
+        timeout = config.download_timeout
+
     if params:
         file_name = params.get("file_name")
         file_path = params.get("file_path")
@@ -231,7 +235,7 @@ def file_download(client, params, user_data):
             if result is None:
                 client.log(iot.LOGINFO, "Downloading")
                 result = client.file_download(file_name, file_path, \
-                                              blocking=True, timeout=15, \
+                                              blocking=True, timeout=timeout, \
                                               file_global=file_global)
                 if result == iot.STATUS_SUCCESS:
                     message = ""
