@@ -692,7 +692,7 @@ class Handler(object):
                                                      action_request)
                                     self.queue_work(work)
                         except:
-                            self.logger.error("No reply message found. Actions may have been attempted while disconnected.")
+                            pass
                 elif sent_command_type == TR50Command.diag_time:
                     # Recevied a reply for a ping request
                     if reply.get("success"):
