@@ -341,7 +341,7 @@ def method_not_implemented():
     return (iot.STATUS_NOT_SUPPORTED, \
             "This method is disabled by its iot.cfg setting")
 
-def publish_platform_info(client):
+def publish_platform_info(client, attr_file_dir=default_cfg_dir, attr_file_name="attributes.cfg"):
     """
     Function to publish information about the current platform (device) to the
     cloud as attributes.
@@ -351,7 +351,7 @@ def publish_platform_info(client):
     try:
         hdc_version = pkg_resources.get_distribution("device_cloud").version
     except pkg_resources.DistributionNotFound:
-        hdc_version = "Unknown"
+        hdc_version = "RC-17.00.00"
 
     client.attribute_publish("os_name", osal.os_name())
     client.attribute_publish("os_version", osal.os_version())
@@ -360,6 +360,19 @@ def publish_platform_info(client):
     client.attribute_publish("kernel", osal.os_kernel())
     client.attribute_publish("hdc_version", hdc_version)
     client.attribute_publish("mac_address", get_adapter_mac())
+
+    try:
+        with open(os.path.join(attr_file_dir, attr_file_name), 'r') as attr_file:
+            attribute_data = json.load(attr_file)
+        attr_list = attribute_data["publish_attribute"]
+
+        for key, value in attr_list.items():
+            if key == "hdc_version":
+                client.log(iot.LOGERROR, "Cannot set hdc_version")
+            else:
+                client.attribute_publish(key, value)
+    except:
+        pass
 
 def quit_me():
     """
