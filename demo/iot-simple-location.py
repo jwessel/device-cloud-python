@@ -137,6 +137,10 @@ if __name__ == "__main__":
                                   * 0.001, 2)
                 pos_long += round((speed * math.sin(math.radians(heading))) \
                                    * 0.001, 2)
+                if pos_lat not in range(-90, 90) :
+                    pos_lat = random.uniform(-90, 90)
+                if pos_long not in range(-180, 180) :
+                    pos_long = random.uniform(-180, 180)
 
                 client.log(iot.LOGINFO, "Publishing Location")
                 client.location_publish(pos_lat, pos_long, heading=heading,
