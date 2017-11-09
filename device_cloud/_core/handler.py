@@ -677,20 +677,22 @@ class Handler(object):
                 elif sent_command_type == TR50Command.mailbox_check:
                     # Received a reply for a mailbox check
                     if reply.get("success"):
-                        for mail in reply["params"]["messages"]:
-                            mail_command = mail.get("command")
-                            if mail_command == "method.exec":
-                                # Action execute request in mailbox
-                                mail_id = mail.get("id")
-                                action_name = mail["params"].get("method")
-                                action_params = mail["params"].get("params")
-                                action_request = defs.ActionRequest(mail_id,
-                                                                    action_name,
-                                                                    action_params)
-                                work = defs.Work(constants.WORK_ACTION,
-                                                 action_request)
-                                self.queue_work(work)
-
+                        try:
+                            for mail in reply["params"]["messages"]:
+                                mail_command = mail.get("command")
+                                if mail_command == "method.exec":
+                                    # Action execute request in mailbox
+                                    mail_id = mail.get("id")
+                                    action_name = mail["params"].get("method")
+                                    action_params = mail["params"].get("params")
+                                    action_request = defs.ActionRequest(mail_id,
+                                                                        action_name,
+                                                                        action_params)
+                                    work = defs.Work(constants.WORK_ACTION,
+                                                     action_request)
+                                    self.queue_work(work)
+                        except:
+                            self.logger.error("No reply message found. Actions may have been attempted while disconnected.")
                 elif sent_command_type == TR50Command.diag_time:
                     # Recevied a reply for a ping request
                     if reply.get("success"):
