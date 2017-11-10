@@ -520,7 +520,12 @@ class Handler(object):
                 # Cloud.
                 if (checksum == download.file_checksum) or (download.file_checksum == None):
                     # Checksums match, move temporary file to real file position
-                    os.rename(temp_path, download.file_path)
+                    try:
+                        os.rename(temp_path, download.file_path)
+                    except:
+                        # If file already exists, remove and replace. (Windows users)
+                        os.remove(download.file_path)
+                        os.rename(temp_path, download.file_path)
                     self.logger.info("Successfully downloaded \"%s\"",
                                      download.file_name)
                     status = constants.STATUS_SUCCESS
