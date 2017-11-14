@@ -320,17 +320,32 @@ def get_adapter_mac():
     """
     Returns the MAC address for the current network adapter
     """
-    rmac = uuid.getnode()
+    mac = "00:00:00:00:00:00"
 
-    # Check if valid MAC or a fake one before proceeding
-    if (rmac >> 40)%2:
-        mac = "00:00:00:00:00:00"
+    if sys.platform.startswith("win"):
+        addresses = []
+        for line in os.popen("ipconfig /all"):
+            if line.strip().startswith("Physical Address"):
+                info = line.split(":")
+                address = info[1].replace("-", ":").strip()
+                if not address.startswith("00:00:00:00:00:00"):
+                    addresses.append(address)
+        for i in addresses:   # Format array to string
+            if i==addresses[0]:
+                mac = addresses[0]
+            else:
+                mac = mac+"; "+addresses[1]
     else:
-        # Convert MAC into typical hex notation
-        mac = hex(rmac).replace('0x', '')[:-1].upper().rjust(12, '0')
-        for i in range(0, 5):
-            ii = 2*(i+1)+i
-            mac = mac[:ii] + ":" + mac[ii:]
+        rmac = uuid.getnode()
+        # Check if valid MAC or a fake one before proceeding
+        if (rmac >> 40)%2:
+            pass
+        else:
+            # Convert MAC into typical hex notation
+            mac = hex(rmac).replace('0x', '')[:-1].upper().rjust(12, '0')
+            for i in range(0, 5):
+                ii = 2*(i+1)+i
+                mac = mac[:ii] + ":" + mac[ii:]
     return mac
 
 def method_not_implemented():
