@@ -86,7 +86,6 @@ class OTAHandler(object):
                                                    args=(client, params,
                                                          request))
             self._update_thread.start()
-
             result = (iot.STATUS_INVOKED, "Software Update Started (Invoked)")
         else:
             result = (iot.STATUS_FAILURE, \
@@ -107,6 +106,7 @@ class OTAHandler(object):
         client.alarm_publish(ALARM_NAME, ALARM_STARTED)
         client.log(iot.LOGINFO, "Started OTA Update")
         client.event_publish("OTA: Started OTA Update")
+        client.action_progress_update(request.request_id, "Started OTA Update")
 
         package_dir = os.path.join(self._runtime_dir, OTA_PACKAGEDIR)
 
@@ -153,6 +153,7 @@ class OTAHandler(object):
 
                 client.log(iot.LOGINFO, "Running Pre-Install...")
                 client.event_publish("OTA: Running Pre-Install...")
+                client.action_progress_update(request.request_id, "Running Pre-Install")
                 client.alarm_publish(ALARM_NAME, ALARM_PRE_INSTALL)
                 if not update_data.get('pre_install', ""):
                     status = iot.STATUS_SUCCESS
@@ -173,23 +174,28 @@ class OTAHandler(object):
                 if update_data.get('pre_install', ""):
                     client.log(iot.LOGINFO, "Pre-Install Complete!")
                     client.event_publish("OTA: Pre-Install Successful!")
+                    client.action_progress_update(request.request_id, "Pre-Install Successful")
 
                 client.log(iot.LOGINFO, "Running Install...")
                 client.event_publish("OTA: Running Install...")
+                client.action_progress_update(request.request_id, "Running Install")
                 client.alarm_publish(ALARM_NAME, ALARM_INSTALL)
                 status = self._execute(update_data['install'], package_dir)
             elif not error_notified:
                 error_notified = True
                 client.log(iot.LOGERROR, "Pre-Install Failed!")
                 client.event_publish("OTA: Pre-Install Failed!")
+                client.action_progress_update(request.request_id, "Pre-Install Failed")
 
             # 6. Run Post-Install
             if status == iot.STATUS_SUCCESS:
                 client.log(iot.LOGINFO, "Install Complete!")
                 client.event_publish("OTA: Install Successful!")
+                client.action_progress_update(request.request_id, "Install Successful")
 
                 client.log(iot.LOGINFO, "Running Post-Install...")
                 client.event_publish("OTA: Running Post-Install...")
+                client.action_progress_update(request.request_id, "Running Post-Install")
                 client.alarm_publish(ALARM_NAME, ALARM_POST_INSTALL)
                 if not update_data.get('post_install', ""):
                     status = iot.STATUS_SUCCESS
@@ -204,21 +210,25 @@ class OTAHandler(object):
                 error_notified = True
                 client.log(iot.LOGERROR, "Install Failed!")
                 client.event_publish("OTA: Install Failed!")
+                client.action_progress_update(request.request_id, "Install Failed")
 
             if status == iot.STATUS_SUCCESS:
                 if update_data.get('post_install', ""):
                     client.log(iot.LOGINFO, "Post-Install Complete!")
                     client.event_publish("OTA: Post-Install Successful!")
+                    client.action_progress_update(request.request_id, "Post-Install Successful")
                     status = iot.STATUS_SUCCESS
             elif not error_notified:
                 error_notified = True
                 client.log(iot.LOGERROR, "Post-Install Failed!")
                 client.event_publish("OTA: Post-Install Failed!")
+                client.action_progress_update(request.request_id, "Post-Install Failed")
 
         # 7. Report Final Status
         if status == iot.STATUS_SUCCESS:
             client.log(iot.LOGINFO, "OTA Successful!")
             client.event_publish("OTA: Update Successful!")
+            client.action_progress_update(request.request_id, "Update Successful")
             client.alarm_publish(ALARM_NAME, ALARM_COMPLETE)
             status_string = ""
         else:
@@ -231,6 +241,7 @@ class OTAHandler(object):
 
             client.log(iot.LOGERROR, "OTA Failed!")
             client.event_publish("OTA: Update Failed!")
+            client.action_progress_update(request.request_id, "Update Failed")
             client.alarm_publish(ALARM_NAME, ALARM_FAILED)
             status_string = iot.status_string(status)
 
@@ -267,7 +278,7 @@ class OTAHandler(object):
         status = iot.STATUS_FAILURE
 
         # Default timeout set as 10 mins
-        if timeout == 0:
+        if timeout in (0, None):
             timeout = 600
         if client:
             out_dir = os.path.join(self._runtime_dir, "download")
