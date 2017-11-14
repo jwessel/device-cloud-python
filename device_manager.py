@@ -201,6 +201,7 @@ def file_download(client, params, user_data):
     file_path = None
     result = None
     timeout = 15
+    blocking = user_data[1]
     if hasattr(config, "download_timeout"):
         timeout = config.download_timeout
 
@@ -238,7 +239,7 @@ def file_download(client, params, user_data):
             if result is None:
                 client.log(iot.LOGINFO, "Downloading")
                 result = client.file_download(file_name, file_path, \
-                                              blocking=True, timeout=timeout, \
+                                              blocking=blocking, timeout=timeout, \
                                               file_global=file_global)
                 if result == iot.STATUS_SUCCESS:
                     message = ""
@@ -260,6 +261,7 @@ def file_upload(client, params, user_data):
     file_name = None
     file_path = None
     result = None
+    blocking = user_data[3]
     if params:
         file_name = params.get("file_name")
         file_path = params.get("file_path")
@@ -271,6 +273,7 @@ def file_upload(client, params, user_data):
         if not file_name and not file_path:
             file_path = abspath(os.path.join(user_data[0], "upload"))
             file_name = "upload"
+            # If upload_tar_file, create tar file
             if user_data[2]:
                 file_name = (file_path+".tar").replace("/", "")
                 with tarfile.open((file_path+os.sep+file_name), "w") as tar:
@@ -290,18 +293,21 @@ def file_upload(client, params, user_data):
         if file_name and file_path:
             client.log(iot.LOGINFO, "Uploading {}".format(file_name))
             result = client.file_upload(file_path, upload_name=file_name, \
-                                        blocking=True, timeout=240, \
+                                        blocking=blocking, timeout=240, \
                                         file_global=file_global)
             if result == iot.STATUS_SUCCESS:
                 message = ""
-                if ".tar" in file_name:
+                # If upload_tar_file, delete tar file that was created
+                if user_data[2]:
                     os.remove(file_path)
                 if user_data[1] and "upload" in file_path:
                     try:
-                        if ".tar" in file_name:
+                        # If upload_tar_file, delete associated files
+                        if user_data[2]:
                             base = os.path.dirname(file_path)
                             for fn in os.listdir(base):
                                 os.remove(base+os.sep+fn)
+                        # If all of runtime_dir/upload uploaded, delete all files
                         elif file_name == "upload":
                             for fn in os.listdir(file_path):
                                 os.remove(file_path+os.sep+fn)
@@ -475,11 +481,11 @@ if __name__ == "__main__":
     # Set action callbacks, if enabled in iot.cfg
     action_register_conditional(client, "file_download", file_download, \
                                 config.actions_enabled.file_transfers, \
-                                (runtime_dir,))
+                                (runtime_dir, config.wait_for_file_transfer))
     action_register_conditional(client, "file_upload", file_upload, \
                                 config.actions_enabled.file_transfers, \
                                 (runtime_dir, config.upload_remove_on_success,
-                                config.upload_tar_file))
+                                config.upload_tar_file, config.wait_for_file_transfer))
 
     action_register_conditional(client, "shutdown_device", device_shutdown, \
                                 config.actions_enabled.shutdown_device)
