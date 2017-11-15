@@ -26,9 +26,6 @@ cloud_desc = "\nCloud host address (Required)"
 port_desc = "\nCloud port (eg. 1883/8883/443) (Required)"
 token_desc = "\nCloud token (Required)"
 qos_desc = "\nQoS level (default 1) (Optional)"
-do_validate_desc = "\nValidate SSL certificates (default true) (Optional)"
-no_validate_desc = "\nDo not validate SSL certificates (Optional)"
-cert_desc = "\nLocation of an ssl certificate bundle (If not set will use the bundle included with certifi instead) (Optional)"
 proxy_desc = "\nRoute all traffic through a proxy (default false) (Optional)"
 proxy_type_desc = "\nProxy type (eg. SOCKS4/SOCKS5/HTTP)"
 proxy_host_desc = "\nProxy host address"
@@ -46,8 +43,6 @@ def generate():
     parser.add_argument("-p", "--port", type=int, help=port_desc)
     parser.add_argument("-t", "--token", help=token_desc)
     parser.add_argument("-q", "--qos", type=int, help=qos_desc, dest='qos_level', default=1)
-    parser.add_argument("-n", "--no-validate", help=no_validate_desc, dest='validate', action="store_false", default=True)
-    parser.add_argument("-s", "--ssl-bundle", help=cert_desc)
     parser.add_argument("--proxy-type", help=proxy_type_desc)
     parser.add_argument("--proxy-host", help=proxy_host_desc)
     parser.add_argument("--proxy-port", type=int, help=proxy_port_desc)
@@ -103,9 +98,7 @@ def generate():
             return 1
 
         config["qos_level"] = args.qos_level
-        config["validate_cloud_cert"] = args.validate
-        if args.ssl_bundle:
-            config["ca_bundle_file"] = args.ssl_bundle
+        config["validate_cloud_cert"] = True
 
     else:
         # No arguments. Use prompt to gather information.
@@ -151,22 +144,7 @@ def generate():
         else:
             config["qos_level"] = 1
 
-        print(do_validate_desc)
-        temp = input("# ").strip()
-        if temp:
-            if temp.lower() in negatives:
-                config["validate_cloud_cert"] = False
-            else:
-                config["validate_cloud_cert"] = True
-                if temp.lower() not in positives:
-                    print("Not recognised. Defaulting to True.")
-        else:
-            config["validate_cloud_cert"] = True
-
-        print(cert_desc)
-        temp = input("# ").strip()
-        if temp:
-            config["ca_bundle_file"] = temp
+        config["validate_cloud_cert"] = True
 
         print(proxy_desc)
         temp = input("# ").strip()
