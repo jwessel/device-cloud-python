@@ -30,6 +30,7 @@ import signal
 import sys
 from time import sleep
 import uuid
+import argparse
 import tarfile
 
 from device_cloud import osal
@@ -43,6 +44,8 @@ running = True
 systemd_controlled = False
 
 default_cfg_dir = "."
+app_id = "device_manager_py"
+config_file = "iot-connect.cfg"
 
 def sighandler(signum, frame):
     """
@@ -421,9 +424,24 @@ if __name__ == "__main__":
     if osal.POSIX:
         signal.signal(signal.SIGQUIT, sighandler)
 
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Device Manager for Python HDC")
+    parser.add_argument("-i", "--app_id", help="Custom app id")
+    parser.add_argument("-c", "--default_cfg_dir", help="Custom config directory")
+    parser.add_argument("-f", "--config_file", help="Custom config file name (in config directory)")
+    args = parser.parse_args(sys.argv[1:])
+
+    # Check for command line arguments
+    if args.app_id:
+        app_id = args.app_id
+    if args.default_cfg_dir:
+        default_cfg_dir = args.default_cfg_dir
+    if args.config_file:
+        config_file = args.config_file
+
     # Initialize client called 'device_manager_py'
-    client = iot.Client("device_manager_py")
-    client.config.config_file = default_cfg_dir + "/iot-connect.cfg"
+    client = iot.Client(app_id)
+    client.config.config_file = default_cfg_dir + "/" + config_file
     client.initialize()
 
     config = config_load()
