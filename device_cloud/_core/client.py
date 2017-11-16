@@ -182,6 +182,7 @@ class Client(object):
     def action_acknowledge(self, request_id, error_code=0, error_message=""):
         """
         Send an acknowledgement for an action request
+        Intended for internal use only
 
         Parameters:
           request_id          (string) If action_request.request_id was
