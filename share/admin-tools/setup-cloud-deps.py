@@ -35,9 +35,6 @@ from datetime import datetime
 if sys.version_info.major == 2:
     input = raw_input
 
-# get the org to switch to if use has multiple orgs
-switch_org = os.environ.get("HDCORG")
-
 app_file = "validate_app.py"
 cloud = ""
 validate_app = None
@@ -278,6 +275,7 @@ def main():
     cloud = os.environ.get("HDCADDRESS")
     username = os.environ.get("HDCUSERNAME")
     password = os.environ.get("HDCPASSWORD")
+    switch_org = os.environ.get("HDCORG")
 
     # ask for Cloud credentials
     if not cloud:
@@ -286,6 +284,8 @@ def main():
         username = input("Username: ")
     if not password:
         password = getpass.getpass("Password: ")
+    if not switch_org:
+        switch_org = input("Org ID (Optional): ")
 
     # Ensure Cloud address is formatted correctly for later use
     cloud = cloud.split("://")[-1]
@@ -302,8 +302,7 @@ def main():
     else:
         error_quit("Failed to get session id.")
 
-
-    # if the org was specified in the env, switch to it here
+    # if the org was specified, switch to it here
     if switch_org:
         print("Org ID before switch=%s" % get_org_id(session_id, username))
         if change_session_org(session_id, switch_org) == False:
