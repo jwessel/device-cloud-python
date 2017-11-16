@@ -120,7 +120,7 @@ def device_decommission(client, params, user_data):
     files, preventing the device from reconnecting to the cloud. The device
     manager app will then shut down.
     """
-    global running
+    global running, default_cfg_dir
 
     # TODO: fix this for paths use default_cfg_dir and
     # default_runtime_dir
@@ -447,10 +447,11 @@ if __name__ == "__main__":
 
     # Initialize client called 'device_manager_py'
     client = iot.Client(app_id)
+    client.config.config_dir = default_cfg_dir
     client.config.config_file = default_cfg_dir + "/" + config_file
     client.initialize()
 
-    config = config_load()
+    config = config_load(default_cfg_dir)
     runtime_dir = config.runtime_dir
 
     if hasattr(config, "log_level"):
@@ -521,7 +522,7 @@ if __name__ == "__main__":
     ack_messages(client, os.path.join(runtime_dir, "message_ids"))
 
     # Publish system details
-    publish_platform_info(client)
+    publish_platform_info(client, default_cfg_dir)
 
     if os.path.isfile(os.path.join(runtime_dir, ".otalock")):
         try:
