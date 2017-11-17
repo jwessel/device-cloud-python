@@ -56,6 +56,17 @@ def pass_action(client, params, user_data):
 def fail_action(client, params, user_data):
     return (19, "fail and such")
 
+def file_download(client, params):
+    """
+    file_download callback
+    """
+    return client.file_download(params.get("file_name"), os.path.dirname(os.path.abspath(__file__)))
+
+def file_upload(client, params):
+    """
+    file_upload callback
+    """
+    return client.file_upload(os.path.abspath(__file__), upload_name=params.get("file_name"))
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, sighandler)
@@ -71,6 +82,8 @@ if __name__ == "__main__":
 
     client.action_register_callback("pass_action", pass_action)
     client.action_register_callback("fail_action", fail_action)
+    client.action_register_callback("file_download", file_download)
+    client.action_register_callback("file_upload", file_upload)
 
     if client.connect(timeout=10) != device_cloud.STATUS_SUCCESS:
         print("Failed to connect")

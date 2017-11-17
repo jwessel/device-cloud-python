@@ -180,7 +180,6 @@ def method_exec(session_id, thing_key, method_name, params=None):
     data = {"cmd":{"command":"method.exec","params":data_params}}
     return _send(data, session_id)
 
-
 def stop_app(proc):
     """
     Stop application by sending a newline to stdin
@@ -228,6 +227,87 @@ def check_for_match(haystack, needle):
             found = True
     return found
 
+def rest_exec_upload(session_id, thing_key):
+    """
+    Test REST calls by uploading a file
+    """
+    upload_stat = method_exec(session_id, thing_key, "file_upload",
+                              {"file_name":"validate_exec.txt"})
+    # Check that a file was successfully uploaded to the Cloud
+    tries = 10
+    while tries > 0:
+        tries -= 1
+        time.sleep(0.5)
+        # Check for success status for method_exec command
+        if upload_stat.get("success") == True:
+            files_info = get_files(session_id, thing_key)
+            loop_done = False
+            # Check that the file was actually uploaded
+            if files_info.get("success") is True:
+                # there may be more than one file returned
+                file_results = files_info["params"]["result"]
+                for file in file_results:
+                    if file["fileName"]  == "validate_exec.txt":
+                        print("File uploaded with method_exec: validate_exec.txt - OK")
+                        loop_done = True
+                        break
+                if loop_done == True:
+                    break
+                elif tries == 0:
+                    print("File could not be found in cloud (method_exec)- FAIL")
+                    fails.append("Finding file in cloud (method_exec)")
+                    break
+                # If haven't hit a break, then try again:
+                upload_stat = method_exec(session_id, thing_key, "file_upload",
+                                          {"file_name":"validate_exec.txt"})
+            else:
+                if tries == 0:
+                    print("method_exec was successful but no files found - FAIL")
+                    fails.append("File list retrieval (method_exec)")
+                    break
+        else:
+            upload_stat = method_exec(session_id, thing_key, "file_upload",
+                                      {"file_name":"validate_exec.txt"})
+            if tries == 0:
+                print("method_exec failied for upload - FAIL")
+                fails.append("method_exec upload")
+
+def rest_exec_download(session_id, thing_key):
+    """
+    Test REST calls by downloading a file
+    """
+    download_stat = method_exec(session_id, thing_key, "file_download",
+                                {"file_name":"validate_exec.txt"})
+    # Check that a file was successfully downloaded from the Cloud
+    tries = 10
+    while tries > 0:
+        tries -= 1
+        time.sleep(0.5)
+        # Check for success status for method_exec command
+        if download_stat.get("success") == True:
+            loop_done = False
+            if os.path.isfile(os.path.abspath("validate_exec.txt")):
+                print("File downloaded with method_exec: validate_exec.txt - OK")
+                os.remove(os.path.abspath("validate_exec.txt"))
+                loop_done = True
+                break
+            else:
+                # Try again
+                download_stat = method_exec(session_id, thing_key, "file_download",
+                                            {"file_name":"validate_exec.txt"})
+                if tries == 0:
+                    print("method_exec was successful, but file not found - FAIL")
+                    fails.append("Finding file on device (method_exec)")
+                    break
+            if loop_done == True:
+                break
+        else:
+            download_stat = method_exec(session_id, thing_key, "file_download",
+                                        {"file_name":"validate_exec.txt"})
+            if tries == 0:
+                print("method_exec failied for download - FAIL")
+                fails.append("method_exec download")
+
 def main():
     """
     Main function to validate abilites of host
@@ -235,6 +315,7 @@ def main():
 
     global cloud
     start_time = datetime.utcnow()
+    global fails
     fails = []
     default_device_id = "travisci-session-py-"
     py_ver = platform.python_version()
@@ -494,11 +575,15 @@ def main():
         time.sleep(0.5)
         if os.path.isfile(os.path.abspath("validate_download.txt")):
             print("File downloaded: validate_download.txt - OK")
+            os.remove(os.path.abspath("validate_download.txt"))
             break
         else:
             if tries == 0:
                 print("Could not find downloaded file - FAIL")
                 fails.append("Download file")
+
+    rest_exec_upload(session_id, thing_key)
+    rest_exec_download(session_id, thing_key)
 
     stop_app(validate_app)
     return fails
