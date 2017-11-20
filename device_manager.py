@@ -339,11 +339,11 @@ def get_adapter_mac():
                 address = info[1].replace("-", ":").strip()
                 if not address.startswith("00:00:00:00:00:00"):
                     addresses.append(address)
-        for i in addresses:   # Format array to string
-            if i==addresses[0]:
+        for i in range(len(addresses)):   # Format array to string
+            if i==0:
                 mac = addresses[0]
             else:
-                mac = mac+"; "+addresses[1]
+                mac = mac+"; "+addresses[i]
     else:
         rmac = uuid.getnode()
         # Check if valid MAC or a fake one before proceeding
