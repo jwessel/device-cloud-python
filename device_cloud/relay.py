@@ -76,7 +76,7 @@ class Relay(object):
         connection will be started when a specific string is received from the
         Cloud
         """
-
+        lconnect = 0;
         while self.running is True:
             # Continuously receive data from each socket and send it through the
             # other
@@ -94,7 +94,7 @@ class Relay(object):
                     if data_in:
                         if self.lsock:
                             self.lsock.send(data_in)
-                        elif data_in == CONNECT_MSG:
+                        elif lconnect == 0 and data_in.decode('ascii') == CONNECT_MSG:
                             # If the local socket has not been established yet,
                             # and we have received the connection string, start
                             # local socket.
@@ -110,6 +110,7 @@ class Relay(object):
                                          self.log_name)
                                 break
 
+                            lconnect = 1;
                             self.log(logging.INFO,
                                     "%s - Local socket successfully opened",
                                      self.log_name)

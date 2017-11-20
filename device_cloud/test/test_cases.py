@@ -2082,7 +2082,10 @@ class RelayLoopNoLocal(unittest.TestCase):
         mock_select.return_value = ([self.relay.wsock], None, None)
         mock_socket.side_effect = self.socket_side_effect
         mock_recv = mock.Mock()
-        mock_recv.return_value = (0, device_cloud.relay.CONNECT_MSG)
+        if sys.version_info.major == 2:
+            mock_recv.return_value = (0, device_cloud.relay.CONNECT_MSG)
+        else:
+            mock_recv.return_value = (0, device_cloud.relay.CONNECT_MSG.encode())
         self.relay.wsock.recv_data = mock_recv
 
         self.relay._loop()
@@ -2107,7 +2110,11 @@ class RelayLoopNoLocalError(unittest.TestCase):
         mock_select.return_value = ([self.relay.wsock], None, None)
         mock_socket.side_effect = socket.error
         mock_recv = mock.Mock()
-        mock_recv.return_value = (0, device_cloud.relay.CONNECT_MSG)
+        if sys.version_info.major == 2:
+            mock_recv.return_value = (0, device_cloud.relay.CONNECT_MSG)
+        else:
+            mock_recv.return_value = (0, device_cloud.relay.CONNECT_MSG.encode())
+
         self.relay.wsock.recv_data = mock_recv
 
         self.relay._loop()
