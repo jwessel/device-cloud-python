@@ -298,7 +298,7 @@ class Client(object):
         Publish string telemetry to the Cloud
 
         Parameters:
-          attribute_name      (string) Name of attribute to publish to
+          attribute_name      (string) Key of the attribute to publish
           value               (string) Value to publish
 
         Returns:
@@ -504,7 +504,7 @@ class Client(object):
         Publish telemetry to the Cloud
 
         Parameters:
-          telemetry_name      (string) Name of property to publish to
+          telemetry_name      (string) Key of property to publish
           value               (number) Value to publish
 
         Returns:
