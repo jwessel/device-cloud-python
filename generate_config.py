@@ -25,7 +25,6 @@ file_desc = "\nName of config file to write (eg. appname-connect.cfg) (Required)
 cloud_desc = "\nCloud host address (Required)"
 port_desc = "\nCloud port (eg. 1883/8883/443) (Required)"
 token_desc = "\nCloud token (Required)"
-qos_desc = "\nQoS level (default 1) (Optional)"
 proxy_desc = "\nRoute all traffic through a proxy (default false) (Optional)"
 proxy_type_desc = "\nProxy type (eg. SOCKS4/SOCKS5/HTTP)"
 proxy_host_desc = "\nProxy host address"
@@ -42,7 +41,6 @@ def generate():
     parser.add_argument("-c", "--cloud", help=cloud_desc)
     parser.add_argument("-p", "--port", type=int, help=port_desc)
     parser.add_argument("-t", "--token", help=token_desc)
-    parser.add_argument("-q", "--qos", type=int, help=qos_desc, dest='qos_level', default=1)
     parser.add_argument("--proxy-type", help=proxy_type_desc)
     parser.add_argument("--proxy-host", help=proxy_host_desc)
     parser.add_argument("--proxy-port", type=int, help=proxy_port_desc)
@@ -97,7 +95,7 @@ def generate():
             print("Missing {}. Try again.".format(", ".join(missing)))
             return 1
 
-        config["qos_level"] = args.qos_level
+        config["qos_level"] = 1
         config["validate_cloud_cert"] = True
 
     else:
@@ -137,13 +135,7 @@ def generate():
             print("Cloud token is required.")
             return 1
 
-        print(qos_desc)
-        temp = input("# ").strip()
-        if temp:
-            config["qos_level"] = int(temp)
-        else:
-            config["qos_level"] = 1
-
+        config["qos_level"] = 1
         config["validate_cloud_cert"] = True
 
         print(proxy_desc)
