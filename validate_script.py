@@ -34,6 +34,7 @@ import subprocess
 import sys
 import time
 import platform
+import uuid
 
 from datetime import datetime
 
@@ -317,9 +318,20 @@ def main():
     start_time = datetime.utcnow()
     global fails
     fails = []
-    default_device_id = "travisci-session-py-"
-    py_ver = platform.python_version()
-    default_device_id += py_ver.replace(".","")
+
+    # travis sets an env, use it for a unique think key that will not
+    # be impacted by someone running the script manually.
+    # Note: use default_device_id with the default device id.  If the device_id
+    # file does not exist, use the default.
+    default_device_id = ""
+    default_device_id = os.environ.get("AUTO_PREFIX")
+    if default_device_id:
+        py_ver = platform.python_version()
+        default_device_id += py_ver.replace(".","")
+    else:
+        # if there is no AUTO_PREFIX generate a default id
+        # this will only be used if there is no device_id file
+        default_device_id = str(uuid.uuid4())
 
     if not os.path.isfile(app_file):
         error_quit("Could not find app file {}.".format(app_file))
