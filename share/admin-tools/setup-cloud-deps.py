@@ -285,7 +285,7 @@ def main():
     if not password:
         password = getpass.getpass("Password: ")
     if not switch_org:
-        switch_org = input("Org ID (Optional): ")
+        switch_org = input("Org Key(Optional): ")
 
     # Ensure Cloud address is formatted correctly for later use
     cloud = cloud.split("://")[-1]
