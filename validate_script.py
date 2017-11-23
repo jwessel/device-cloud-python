@@ -234,6 +234,11 @@ def rest_exec_upload(session_id, thing_key):
     """
     upload_stat = method_exec(session_id, thing_key, "file_upload",
                               {"file_name":"validate_exec.txt"})
+    if upload_stat.get("success") is True:
+        print("upload success: True - OK")
+    else:
+        print("upload failed to complete successfully - FAIL")
+
     # Check that a file was successfully uploaded to the Cloud
     tries = 10
     while tries > 0:
@@ -279,6 +284,11 @@ def rest_exec_download(session_id, thing_key):
     """
     download_stat = method_exec(session_id, thing_key, "file_download",
                                 {"file_name":"validate_exec.txt"})
+    if download_stat.get("success") is True:
+        print("upload success: True - OK")
+    else:
+        print("upload failed to complete successfully - FAIL")
+
     # Check that a file was successfully downloaded from the Cloud
     tries = 10
     while tries > 0:
@@ -308,6 +318,35 @@ def rest_exec_download(session_id, thing_key):
             if tries == 0:
                 print("method_exec failied for download - FAIL")
                 fails.append("method_exec download")
+
+def get_org_id(session_id, username):
+    """
+    Get org id
+    """
+    ret = False
+    data_params = {"username":username}
+    data = {"cmd":{"command":"user.find","params":data_params}}
+    result = _send(data, session_id)
+    #print(json.dumps(result, indent=2, sort_keys=True))
+
+    # now get the user ID from this
+    if result.get("success") is True:
+        user_id = result['params']['id']
+        org_id = result['params']['defaultOrgId']
+    return org_id
+
+def change_session_org(session_id, org):
+    """
+    Change org
+    """
+    ret = False
+    print("Changing org to %s" % org)
+    data_params = {"key":org}
+    data = {"cmd":{"command":"session.org.switch","params":data_params}}
+    result = _send(data, session_id)
+    if result.get("success") == True:
+        ret = True
+    return ret
 
 def main():
     """
@@ -340,6 +379,7 @@ def main():
     username = os.environ.get("HDCUSERNAME")
     password = os.environ.get("HDCPASSWORD")
     token = os.environ.get("HDCAPPTOKEN")
+    org = os.environ.get("HDCORG")
 
     # Get Cloud credentials
     if not cloud:
@@ -348,6 +388,8 @@ def main():
         username = input("Username: ")
     if not password:
         password = getpass.getpass("Password: ")
+    if not org:
+        org = input("Org Key(Optional): ")
 
     # Ensure Cloud address is formatted correctly for later use
     cloud = cloud.split("://")[-1]
@@ -363,6 +405,15 @@ def main():
         print("Session ID: {} - OK".format(session_id))
     else:
         error_quit("Failed to get session id.")
+
+    # now handle a switch org if needed
+    if org:
+        print("Org ID before switch=%s" % get_org_id(session_id, username))
+        if change_session_org(session_id, org) == False:
+            error_quit("Failed to switch org.")
+        else:
+            print("Org ID after switch=%s" % get_org_id(session_id, username))
+
 
     # Look for the app token created for this validation test.
     # This token is looked for by name, so as long as the cloud has a validation
