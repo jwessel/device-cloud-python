@@ -28,23 +28,28 @@ setup(
     author_email='',
     packages=['device_cloud','device_cloud._core','device_cloud.test'],
     install_requires=[
-        'paho-mqtt',
-        'requests',
         'certifi',
-        'websocket-client',
-        'PySocks'
+        'paho-mqtt',
+        'PySocks',
+        'queues',
+        'requests',
+        'simplejson',
+        'urllib3',
+        'websocket',
+        'websocket-client'
         ],
     maintainer='Paul Barrette',
     maintainer_email='paul.barrette@windriver.com',
     url='http://www.windriver.com/products/helix/',
     license='Apache License, Version 2.0',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 3 - Beta',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.4',
         'Operating System :: Microsoft :: Windows :: Windows 7',
+        'Operating System :: Microsoft :: Windows :: Windows 10',
         'Operating System :: POSIX :: Linux',
         'Topic :: Software Development :: Libraries :: Python Modules'
         ]
