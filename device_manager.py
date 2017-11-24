@@ -32,6 +32,7 @@ from time import sleep
 import uuid
 import argparse
 import tarfile
+import socket
 
 from device_cloud import osal
 from device_cloud import ota_handler
@@ -406,6 +407,21 @@ def quit_me():
     running = False
     return (iot.STATUS_SUCCESS, "")
 
+def check_listening_port(host, port):
+    result = False
+    check = False
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        check = sock.connect( (host, port) )
+        print("Port %d listening" % port)
+        result = True
+        sock.close()
+    except Exception as error:
+        print("Port %d is not listening on %s" % (port,host))
+
+    return result
+
 def remote_access(client, params):
     """
     Start relay which will attempt to connect to a Cloud service and a local
@@ -415,6 +431,9 @@ def remote_access(client, params):
     url = params["url"]
     host = params["host"]
     protocol = int(params["protocol"])
+
+    if not check_listening_port(host, protocol):
+        return (iot.STATUS_FAILURE, "Error: port (%d) not listening" % protocol)
 
     secure = client.config.validate_cloud_cert is not False
     try:
