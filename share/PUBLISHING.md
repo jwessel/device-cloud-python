@@ -11,6 +11,51 @@ Unless required by applicable law or agreed to in writing, software  distributed
 under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
 OR CONDITIONS OF ANY KIND, either express or implied.
 
+
+Quick Start
+===========
+
+  * Create an account on https://pypi.python.org/pypi
+
+  * Create `.pypirc` and add:
+    ```
+    [distutils]
+    index-servers=
+	    pypi
+	    testpypi
+
+    [pypi]
+    username: USERNAME
+    password: PASSWORD
+
+    [testpypi]
+    repository = https://test.pypi.org/legacy/
+    username = USERNAME
+    password = PASSWORD
+    ```
+
+  * Configure setup.py
+    Note: 'version' cannot contain letters and needs to be updated everytime you upload.
+
+  * Create Packages:
+    `python setup.py sdist bdist_wheel`
+    `python3 setup.py sdist bdist_wheel`
+    **must do both to work with both versions of python
+
+  * Sign package:
+    `gpg --detach-sign -a dist/package-name-here.tar.gz`
+    **If you have not already set-up a GPG key, create a new keypair. See
+    [the GPG handbook](https://www.gnupg.org/gph/en/manual/c14.html)
+
+  * Upload to testing site or main server:
+    TEST: `twine upload -r testpypi dist/*`
+    MAIN: `twine upload dist/*`
+
+  * Can be installed from testing site or main server:
+    TEST: `pip install --extra-index-url https://test.pypi.org/simple/ package-name-here`
+    MAIN: `pip install package-name-here`
+
+
 Publishing
 ===========
 Publishing of the module will be done via Pypi to allow for easy installation
