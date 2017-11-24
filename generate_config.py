@@ -17,6 +17,7 @@ import argparse
 import json
 import os
 import sys
+import stat
 
 if sys.version_info.major == 2:
     input = raw_input
@@ -186,6 +187,7 @@ def generate():
 
     with open(file_name, "w+b") as config_file:
         config_file.write(json.dumps(config, indent=2, sort_keys=True).encode())
+    os.chmod(file_name, stat.S_IRWXU | stat.S_IROTH | stat.S_IRGRP)
     print("\nConfiguration:")
     print(json.dumps(config, indent=2, sort_keys=True))
     print("")
