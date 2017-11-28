@@ -442,7 +442,7 @@ class Client(object):
           STATUS_TIMED_OUT             Wait for file transfer timed out. File
                                        transfer is still in progress.
         """
-        if upload_name == "upload":
+        if os.path.isdir(file_path):
             result = []
             for fn in os.listdir(file_path):
                 result.append(self.handler.request_upload((file_path+os.sep+fn), fn, blocking,
@@ -450,7 +450,6 @@ class Client(object):
             if not result:
                 return STATUS_NOT_FOUND
             return max(result)
-
         return self.handler.request_upload(file_path, upload_name, blocking,
                                            callback, timeout, file_global)
 

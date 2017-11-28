@@ -271,16 +271,10 @@ def file_upload(client, params, user_data):
             file_path = abspath(os.path.join(user_data[0], "upload", file_name))
         if file_path and not file_name:
             file_name = os.path.basename(file_path)
+        if file_path and os.path.isdir(file_path):
+            file_path, file_name = file_upload_dir(user_data, file_path, file_name)
         if not file_name and not file_path:
-            file_path = abspath(os.path.join(user_data[0], "upload"))
-            file_name = "upload"
-            # If upload_tar_file, create tar file
-            if user_data[2]:
-                file_name = (file_path+".tar").replace("/", "")
-                with tarfile.open((file_path+os.sep+file_name), "w") as tar:
-                    for fn in os.listdir(file_path):
-                        tar.add((file_path+os.sep+fn), arcname=fn)
-                file_path = abspath(os.path.join(file_path, file_name))
+            file_path, file_name = file_upload_dir(user_data, file_path, file_name)
         if file_path.startswith('~'):
             result = iot.STATUS_BAD_PARAMETER
             message = "Paths cannot use '~' to reference a home directory"
@@ -325,6 +319,28 @@ def file_upload(client, params, user_data):
             message = "No file name or location given"
 
     return (result, message)
+
+def file_upload_dir(user_data, file_path, file_name):
+    """
+    Return upload file_path and file_name for when they are not specified
+    (i.e. upload entire runtime directory) or the file_path is a directory. 
+    """
+    if not file_path:
+        file_path = abspath(os.path.join(user_data[0], "upload"))
+    if not file_name:
+        file_name = os.path.basename(file_path)
+    # If upload_tar_file, create tar file
+    if user_data[2]:
+        if sys.platform.startswith("win"):
+            file_name = (file_path+".tar").replace("\\", "-")[3:]
+        else:
+            file_name = (file_path+".tar").replace("/", "-")[1:]
+        with tarfile.open((file_path+os.sep+file_name), "w") as tar:
+            for fn in os.listdir(file_path):
+                tar.add((file_path+os.sep+fn), arcname=fn)
+            file_path = abspath(os.path.join(file_path, file_name))
+    print (file_path, file_name)
+    return (file_path, file_name)
 
 def get_adapter_mac():
     """
