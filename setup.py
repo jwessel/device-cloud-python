@@ -12,9 +12,21 @@
 '''
 
 from setuptools import setup
-import sys
+import sys, os
 
 pyver = sys.version_info
+ret = []
+
+def addDir(filedir):
+    abspath = os.path.dirname(os.path.abspath(__file__))+os.sep+filedir
+    for filename in os.listdir(abspath):
+        if os.path.isdir(abspath+os.sep+filename):
+            addDir(filedir+os.sep+filename)
+        else:
+           path = filedir+os.sep+filename
+           key = ("share/device_cloud/"+filedir, [path])
+           ret.append(key)
+    return ret
 
 if pyver < (2,7,9) or (pyver > (3,0,0) and pyver < (3,4,0)):
     print("Sorry, your Python version ({}.{}.{}) is not supported by device_cloud!".format(pyver[0], pyver[1], pyver[2]))
@@ -39,7 +51,7 @@ setup(
                                           'COPYING.txt',
                                           'README.md',
                                           'README.macOSX.md',
-                                          'README.style.md'])],
+                                          'README.style.md'])] + addDir("share"),
     install_requires=[
         'certifi',
         'paho-mqtt',
