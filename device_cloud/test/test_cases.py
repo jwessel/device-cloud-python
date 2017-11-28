@@ -1400,7 +1400,7 @@ class OTAPackageDownload(unittest.TestCase):
         self.client = device_cloud.Client("testing-client")
         self.ota = device_cloud.ota_handler.OTAHandler()
         self.ota._runtime_dir = ""
-        result = self.ota._package_download(self.client, "fake.tar.gz", 600)
+        result = self.ota._package_download(self.client, "fake.tar.gz", 600, True)
         assert result == device_cloud.STATUS_SUCCESS
 
 class OTAPackageDownloadNoClient(unittest.TestCase):
@@ -1410,7 +1410,7 @@ class OTAPackageDownloadNoClient(unittest.TestCase):
 
         self.ota = device_cloud.ota_handler.OTAHandler()
         self.ota._runtime_dir = ""
-        result = self.ota._package_download(None, "fake.tar.gz", 600)
+        result = self.ota._package_download(None, "fake.tar.gz", 600, True)
         assert result == device_cloud.STATUS_BAD_PARAMETER
 
 class OTAPackageDownloadBadFile(unittest.TestCase):
@@ -1421,7 +1421,7 @@ class OTAPackageDownloadBadFile(unittest.TestCase):
         self.client = device_cloud.Client("testing-client")
         self.ota = device_cloud.ota_handler.OTAHandler()
         self.ota._runtime_dir = ""
-        result = self.ota._package_download(self.client, "fake.tar.gz", 600)
+        result = self.ota._package_download(self.client, "fake.tar.gz", 600, True)
         assert result == device_cloud.STATUS_FAILURE
 
 class OTAPackageUnzipOther(unittest.TestCase):
