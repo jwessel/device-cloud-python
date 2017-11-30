@@ -96,7 +96,9 @@ def agent_reset(client, params, user_data, request):
     if systemd_controlled != False:
         osal.execl("systemctl", "restart device-manager")
     else:
-        osal.execl("python", "device_manager.py")
+        app_id, default_cfg_dir, config_file = user_data[2]
+        osal.execl("python", "device_manager.py", "-c"+default_cfg_dir,
+                                        "-f"+config_file, "-i"+app_id)
 
     # If this return is hit, then the device manager did not restart properly
     return (iot.STATUS_FAILURE, "Device Manager Failed to Restart!")
@@ -544,7 +546,7 @@ if __name__ == "__main__":
 
     action_register_conditional(client, "reset_agent", agent_reset, \
                                 config.actions_enabled.reset_agent, \
-                                (runtime_dir, ota))
+                                (runtime_dir, ota, [app_id, default_cfg_dir, config_file]))
 
     action_register_conditional(client, "quit", quit_me, \
                                 config.actions_enabled.reset_agent)
