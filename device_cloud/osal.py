@@ -104,7 +104,7 @@ def system_shutdown(delay=0, reboot=False, force=True):
     """
     if POSIX:
         command = "sudo /sbin/shutdown "
-        command += "-r +1" if reboot else "-h "
+        command += "-r " if reboot else "-h "
         command += "now " if delay == 0 else "+{} ".format(delay)
     elif WIN32:
         command = "shutdown "
