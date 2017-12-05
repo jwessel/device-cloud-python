@@ -30,7 +30,7 @@ The "device_cloud" module will be deployed on a public PyPI repository.
 However, pip can be used on a git checkout by running  the following
 command in the checkout top level directory:
 ```sh
-pip install .
+sudo pip install .
 ```
 
 The above command will install the device_cloud module and all its dependencies. The
