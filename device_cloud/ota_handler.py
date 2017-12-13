@@ -113,12 +113,14 @@ class OTAHandler(object):
         if params:
             error_notified = False
             download_timeout = params.get("ota_timeout")
-
+            global_store = params.get("use_global_store")
+            if global_store == None:
+                global_store = True
             # 1. Download Package
             client.log(iot.LOGINFO, "Downloading Package...")
             client.event_publish("OTA: Downloading Package...")
             package_name = params.get("package")
-            status = self._package_download(client, package_name, download_timeout)
+            status = self._package_download(client, package_name, download_timeout, global_store)
 
             # 2. Unzip Package
             if status == iot.STATUS_SUCCESS:
@@ -271,7 +273,7 @@ class OTAHandler(object):
            update_data['reboot'] == 'yes':
             osal.system_reboot()
 
-    def _package_download(self, client, file_name, timeout):
+    def _package_download(self, client, file_name, timeout, global_store):
         """
         Method to download the package from the cloud
         """
@@ -289,15 +291,12 @@ class OTAHandler(object):
             if os.path.isfile(out_file):
                 os.remove(out_file)
 
-            for attempts in range(20):
-                if file_name:
+            if file_name:
+                # Try UP TO 20 times to download the package, break if successful
+                for attempts in range(20):
                     status = client.file_download(file_name, out_file, \
                                               blocking=True, timeout=timeout, \
-                                              file_global=True)
-                    if status == iot.STATUS_NOT_FOUND:
-                        status = client.file_download(file_name, out_file, \
-                                                  blocking=True, timeout=timeout, \
-                                                  file_global=False)
+                                              file_global=global_store)
                     if status == iot.STATUS_SUCCESS:
                         break
 
