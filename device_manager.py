@@ -47,6 +47,7 @@ systemd_controlled = False
 default_cfg_dir = "."
 app_id = "device_manager_py"
 config_file = "iot-connect.cfg"
+database_file = "data.cfg"
 
 def sighandler(signum, frame):
     """
@@ -486,6 +487,7 @@ if __name__ == "__main__":
     client = iot.Client(app_id)
     client.config.config_dir = default_cfg_dir
     client.config.config_file = default_cfg_dir + "/" + config_file
+    client.config.database_file = database_file
     client.initialize()
 
     config = config_load(default_cfg_dir)

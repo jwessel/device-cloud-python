@@ -39,6 +39,7 @@ from time import sleep
 import requests
 import paho.mqtt.client as mqttlib
 
+from device_cloud._core import database
 from device_cloud._core import constants
 from device_cloud._core import defs
 from device_cloud._core import tr50
@@ -191,6 +192,15 @@ class Handler(object):
         # Queue to track any pending work (parsing messages, actions,
         # publishing, file transfer, etc.)
         self.work_queue = queue.Queue()
+
+        # Initialize database
+        self.status_list = []
+        self.database_full = self.unsent = self.database_init = False
+        self.first = True
+        if self.config.database:
+            self.database = database.Database(self.logger, self.config.storage,
+                                 self.config.delete_after, self.config.forwarding)
+            self.database_init = True
 
     def action_deregister(self, action_name):
         """
@@ -368,6 +378,9 @@ class Handler(object):
         end_time = current_time + timedelta(seconds=timeout)
 
         # Publish any data that was queued before disconnecting
+        if self.config.database and self.database_init:
+            if self.database.unsent_num() != 0:
+                self.queue_work(defs.Work(constants.WORK_PUBLISH, None))
         if not self.publish_queue.empty():
             self.queue_work(defs.Work(constants.WORK_PUBLISH, None))
 
@@ -733,6 +746,13 @@ class Handler(object):
 
         # Collect all pending publishes in publish queue
         to_publish = []
+        # Check database
+        if self.config.database and self.database_init:
+            try:
+                to_publish =  self.database.unsent()
+            except:
+                pass
+        # Check queue if not using database or if the database is full
         while not self.publish_queue.empty():
             try:
                 to_publish.append(self.publish_queue.get())
@@ -795,7 +815,6 @@ class Handler(object):
                     message = defs.OutMessage(command, message_desc)
 
                 messages.append(message)
-
             # Send all publishes
             if messages:
                 status = self.send(messages)
@@ -900,6 +919,9 @@ class Handler(object):
         # Continuously loop while connected or connecting
         while not self.to_quit:
 
+            # If using database and it is ready, continuously check publishes
+            if self.config.database and self.database_init:
+                self.check_loop()
             # If disconnected, attempt to reestablish connection
             if self.state == constants.STATE_DISCONNECTED:
                 max_time = self.config.keep_alive
@@ -923,8 +945,14 @@ class Handler(object):
             self.mqtt.loop(timeout=self.config.loop_time)
 
             # Make a work item to publish anything that's pending
+            if self.config.database and self.database_init:
+                if self.database.unsent_num() != 0:
+                    self.queue_work(defs.Work(constants.WORK_PUBLISH, None))
             if not self.publish_queue.empty():
                 self.queue_work(defs.Work(constants.WORK_PUBLISH, None))
+
+        if self.config.database and self.database_init:
+            self.database.close()
 
         # One last loop to send out any pending messages
         self.mqtt.loop(timeout=0.1)
@@ -950,7 +978,11 @@ class Handler(object):
         """
         Get number of unfulfilled requests
         """
-        return len(self.mqtt._out_messages)
+        unfinished = 0
+        if self.config.database and self.database_init:
+            unfinished = self.database.unfinished()
+        unfinished = (unfinished + len(self.mqtt._out_messages))
+        return unfinished
 
     def on_connect(self, mqtt, userdata, flags, rc):
         """
@@ -959,6 +991,7 @@ class Handler(object):
         unfinished = self.num_unfinished()
         if (unfinished > 0):
             self.logger.info("%s messages are pending..", unfinished)
+
         # Check connection result from MQTT
         self.logger.info("MQTT connected: %s", mqttlib.connack_string(rc))
         if rc == 0:
@@ -1018,8 +1051,44 @@ class Handler(object):
         """
         Place pub in the publish queue
         """
+        status = []
+        # If pub is a list, add individually and return
+        if isinstance(pub, list):
+            for el in pub:
+                status.append(self.queue_publish(el))
+            if max(status) > 0:
+                return max(status)
+            else:
+                return constants.STATUS_SUCCESS
 
-        self.publish_queue.put(pub)
+        if self.config.database and self.database_init:
+            # Add to database
+            added = self.database.add(pub)
+
+            # If database is full, add to queue instead
+            if added == constants.STATUS_FULL:
+                self.logger.debug("Database full. Adding {} to queue".format(pub.type))
+                # Set "Database Full" alarm
+                if not self.database_full or self.first:
+                    self.first = False
+                    self.database_full = True
+                    alarm = defs.PublishAlarm("database", 1)
+                    self.queue_publish(alarm)
+                self.database_full = True
+                self.publish_queue.put(pub)
+            # Set "Using Database" alarm
+            elif added == constants.STATUS_SUCCESS or self.first:
+                if self.database_full:
+                    self.database_full = self.first = False
+                    alarm = defs.PublishAlarm("database", 0)
+                    self.queue_publish(alarm)
+                self.database_full = False
+            # Report if it was a failure
+            else:
+                self.logger.error("{} failed to add to database".format(pub.type))
+        else:
+            # Add to queue
+            self.publish_queue.put(pub)
         return constants.STATUS_SUCCESS
 
     def queue_work(self, work):
@@ -1136,6 +1205,40 @@ class Handler(object):
 
         return status
 
+    def check_loop(self):
+        """
+        Check loop for the database.
+        If status of a publish is 'sent', remove from status_list and update
+        database. Also, check database forwarding configuration and publish,
+        if necessary.
+        """
+        space = 0
+        for obj in self.status_list:
+            # Check if object has been published
+            if obj[1]._published:
+                # Update database and status_list
+                stat = self.database.update(obj[0], 'status', 'sent')
+
+                if stat == constants.STATUS_FAILURE:
+                    self.logger.warning("The status of topic_num {} failed to "
+                                                       "update".format(obj[0]))
+                else:
+                    # Only remove from status_list when successfully updated
+                    del self.status_list[space]
+
+
+            space+=1
+        # Check if there are publishes waiting
+        if self.config.forwarding.method == "time_window" and self.unsent:
+            time_start = datetime.strptime(self.config.forwarding.time.time_start,
+                                                              "%H:%M:%S").time()
+            time_end = datetime.strptime(self.config.forwarding.time.time_end,
+                                                              "%H:%M:%S").time()
+            if (time_start < datetime.now().time() < time_end):
+                # If correct time frame, publish unsent data
+                self.queue_publish(self.database.unsent())
+                self.unsent = False
+
     def send(self, messages):
         """
         Send commands to the Cloud, and track them to wait for replies
@@ -1159,28 +1262,64 @@ class Handler(object):
                 self.topic_counter += 1
                 if topic_num not in self.reply_tracker:
                     break
-            # Send payload over MQTT
-            result, mid = self.mqtt.publish("api/{}".format(topic_num),
-                                            payload, qos = self.qos_level)
 
-            # Track the topic this message will send on
-            self.reply_tracker.add_mid(mid, topic_num)
+            # Handle database publishes
+            if self.config.database and self.database_init:
+                remove = []
+                init_ts = message_list[0].command.get("params").get("ts")
+                final_ts = message_list[-1].command.get("params").get("ts")
 
-            # Current timestamp to mark when message was sent
-            current_time = datetime.utcnow()
+                for mes in message_list:
+                    command = mes.command["command"]
+                    # Update topic_num for all related messages in database
+                    update_status = self.database.update_topic(topic_num,
+                                                    command, init_ts, final_ts)
+                    if update_status == constants.STATUS_FAILURE:
+                        self.logger.warning("topic_num {} failed to update".format
+                                                                    (topic_num))
+                # Check which publishes are avaliable
+                remove, status, self.unsent = self.database.check_publish(
+                                                         topic_num, message_list)
+                for mes in remove:
+                    message_list.remove(mes)
 
-            # Track each message
-            for num, msg in enumerate(message_list):
-                # Add timestamps and ids
-                msg.timestamp = current_time
-                msg.out_id = "{}-{}".format(topic_num, num+1)
+            # If there is anything in the message_list, continue with publish
+            if message_list:
+                # Send payload over MQTT
+                pub_info = self.mqtt.publish("api/{}".format(topic_num),
+                                                payload, qos = self.qos_level)
+                result, mid = pub_info
+                # Track the topic this message will send on
+                self.reply_tracker.add_mid(mid, topic_num)
 
-                self.reply_tracker.add_message(msg)
-                self.logger.info("MQTT queued %s-%d - %s\n%s", topic_num, num+1,
-                                 msg, json.dumps(msg.command, indent=2,
-                                                 sort_keys=True))
-            status = constants.STATUS_SUCCESS
+                # Current timestamp to mark when message was sent
+                current_time = datetime.utcnow()
 
+                # Track each message
+                for num, msg in enumerate(message_list):
+                    # Add timestamps and ids
+                    msg.timestamp = current_time
+                    msg.out_id = "{}-{}".format(topic_num, num+1)
+
+                    self.reply_tracker.add_message(msg)
+                    self.logger.info("MQTT queued %s-%d - %s\n%s", topic_num,
+                                  num+1, msg, json.dumps(msg.command, indent=2,
+                                                     sort_keys=True))
+                    # Update database
+                    command = msg.command["command"]
+                    if (self.config.database and
+                        self.database_init and command.endswith("publish")):
+                        stat = self.database.update(topic_num, 'status',
+                                                            'pending', command)
+                        if stat == constants.STATUS_FAILURE:
+                            self.logger.warning("topic_num {} failed to update"
+                                                            .format(topic_num))
+
+                        # Add publish info to status_list for status tracking
+                        info = (topic_num, pub_info, command)
+                        self.status_list.append(info)
+
+                status = constants.STATUS_SUCCESS
         finally:
             self.lock.release()
 

@@ -113,14 +113,12 @@ class OTAHandler(object):
         if params:
             error_notified = False
             download_timeout = params.get("ota_timeout")
-            global_store = params.get("use_global_store")
 
             # 1. Download Package
             client.log(iot.LOGINFO, "Downloading Package...")
             client.event_publish("OTA: Downloading Package...")
             package_name = params.get("package")
-            status = self._package_download(client, package_name, download_timeout,
-                                            True if global_store is None else global_store)
+            status = self._package_download(client, package_name, download_timeout)
 
             # 2. Unzip Package
             if status == iot.STATUS_SUCCESS:
@@ -273,7 +271,7 @@ class OTAHandler(object):
            update_data['reboot'] == 'yes':
             osal.system_reboot()
 
-    def _package_download(self, client, file_name, timeout, global_store):
+    def _package_download(self, client, file_name, timeout):
         """
         Method to download the package from the cloud
         """
@@ -291,11 +289,15 @@ class OTAHandler(object):
             if os.path.isfile(out_file):
                 os.remove(out_file)
 
-            if file_name:
-                for attempts in range(20):
+            for attempts in range(20):
+                if file_name:
                     status = client.file_download(file_name, out_file, \
                                               blocking=True, timeout=timeout, \
-                                              file_global=global_store)
+                                              file_global=True)
+                    if status == iot.STATUS_NOT_FOUND:
+                        status = client.file_download(file_name, out_file, \
+                                                  blocking=True, timeout=timeout, \
+                                                  file_global=False)
                     if status == iot.STATUS_SUCCESS:
                         break
 

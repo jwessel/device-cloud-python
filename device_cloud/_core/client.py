@@ -69,6 +69,7 @@ class Client(object):
             "app_id":app_id,
             "config_dir":DEFAULT_CONFIG_DIR,
             "config_file":DEFAULT_CONFIG_FILE.format(app_id),
+            "database_file": {},
             "cloud":{},
             "proxy":{}
         }
@@ -91,7 +92,6 @@ class Client(object):
           STATUS_SUCCESS               Configuration completed successfully
           Exception                    Error in configuration
         """
-
         # Read JSON from config file. Does not overwrite any configuration set
         # in application.
         kwargs = {}
@@ -108,6 +108,29 @@ class Client(object):
             print("Cannot find {}".format(self.config.config_file))
             raise IOError("Cannot find {}".format(self.config.config_file))
         self.config.update(kwargs, False)
+
+        kwargs = {}
+        # Check config directory for database information. If found, update
+        # config info to include database information. If an error results from
+        # anything, always set self.config.database to False
+        if self.config.database and self.config.database_file:
+            data_path = os.path.join(self.config.config_dir, self.config.database_file)
+            if os.path.exists(data_path):
+                try:
+                    with open(data_path, "r") as data_file:
+                        kwargs.update(json.load(data_file))
+                except IOError as error:
+                    self.config.database = False
+                    print("Error parsing JSON from "
+                            "{}".format(self.config.data_file))
+                    raise error
+            else:
+                self.config.database = False
+                print("Cannot find {}, not using database".format(self.config.database_file))
+            self.config.update(kwargs, False)
+        # If no database file specificed, ensure self.config.database is False
+        else:
+            self.config.database = False
 
         kwargs = {}
         # Check config directory for device_id. If it does not exist, generate a
