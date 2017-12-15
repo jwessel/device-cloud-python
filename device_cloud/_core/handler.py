@@ -1198,7 +1198,6 @@ class Handler(object):
                 self.topic_counter += 1
                 if topic_num not in self.reply_tracker:
                     break
-
             self.pub_topic = topic_num
             # Send payload over MQTT
             result, mid = self.mqtt.publish("api/{}".format(topic_num),
