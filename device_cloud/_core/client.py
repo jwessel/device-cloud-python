@@ -450,6 +450,7 @@ class Client(object):
             if not result:
                 return STATUS_NOT_FOUND
             return max(result)
+
         return self.handler.request_upload(file_path, upload_name, blocking,
                                            callback, timeout, file_global)
 
@@ -498,18 +499,21 @@ class Client(object):
                                         accuracy=accuracy, fix_type=fix_type)
         return self.handler.queue_publish(location)
 
-    def telemetry_publish(self, telemetry_name, value, timestamp=None):
+    def telemetry_publish(self, telemetry_name, value, cloud_response=False, timestamp=None):
         """
         Publish telemetry to the Cloud
 
         Parameters:
           telemetry_name      (string) Key of property to publish
           value               (number) Value to publish
-
+          cloud_response      (bool) Wait for response from cloud
+                                     If true, the return status indicates if
+                                     it was sent to the cloud. Otherwise,
+                                     the return status is if it was queued.
         Returns:
-          STATUS_SUCCESS               Telemetry has been queued for publishing
+          STATUS_SUCCESS             Telemetry has been queued for publishing
         """
 
         telem = defs.PublishTelemetry(telemetry_name, value, timestamp)
-        return self.handler.queue_publish(telem)
+        return self.handler.request_publish(telem, cloud_response)
 

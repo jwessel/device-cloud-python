@@ -183,6 +183,10 @@ class Handler(object):
         # Flag for notifying client to exit
         self.to_quit = True
 
+        # Telemetry Response Flag
+        self.pub_wait = self.pub_response = False
+        self.pub_topic = '0000'
+
         # Thread trackers. Main thread for handling MQTT loop, and worker
         # threads for everything else.
         self.main_thread = None
@@ -651,6 +655,15 @@ class Handler(object):
                                       topic_num, command_num, sent_message)
                     self.logger.error(".... %s", str(reply))
 
+                # Return "success" status
+                if self.pub_wait:
+                    if self.pub_topic == topic_num:
+                        self.pub_response = reply.get("success")
+                        self.pub_wait = False
+                    else:
+                        self.logger.warning("Topic numbers don't match up")
+                        self.pub_wait = self.pub_response = False
+
                 # Check what kind of message this is a reply to
                 if sent_command_type == TR50Command.file_get:
                     # Recevied a reply for a file download request
@@ -743,7 +756,6 @@ class Handler(object):
             # If pending publishes are found, parse into list for sending
             messages = []
             for pub in to_publish:
-
                 # Create publish command for an alarm
                 if pub.type == "PublishAlarm":
                     command = tr50.create_alarm_publish(self.config.key,
@@ -997,7 +1009,6 @@ class Handler(object):
         """
         Notify that a message has been published
         """
-
         if self.reply_tracker != {}:
             topic_num = self.reply_tracker.pop_mid(mid)
             self.logger.debug("MQTT sent %s", topic_num)
@@ -1029,6 +1040,34 @@ class Handler(object):
 
         self.work_queue.put(work)
         return constants.STATUS_SUCCESS
+
+    def request_publish(self, data, cloud_response):
+        """
+        Add data to publish queue and wait for cloud response
+        """
+        current_time = datetime.utcnow()
+        end_time = current_time + timedelta(seconds=15)
+        timeout = False
+
+        self.pub_wait = cloud_response
+        status = self.queue_publish(data)
+        if cloud_response:
+            status = constants.STATUS_FAILURE
+            # Wait for response from sending to cloud
+            while self.pub_wait and not self.to_quit:
+                current_time = datetime.utcnow()
+                if (current_time > end_time):
+                    timeout = True
+                    break
+                else:
+                    sleep(0.5)
+
+            # Convert to return codes
+            if self.pub_response:
+                status = constants.STATUS_SUCCESS
+            elif timeout:
+                status = constants.STATUS_TIMED_OUT
+        return status
 
     def request_download(self, file_name, file_dest, blocking=False,
                          callback=None, timeout=0, file_global=False):
@@ -1159,6 +1198,8 @@ class Handler(object):
                 self.topic_counter += 1
                 if topic_num not in self.reply_tracker:
                     break
+
+            self.pub_topic = topic_num
             # Send payload over MQTT
             result, mid = self.mqtt.publish("api/{}".format(topic_num),
                                             payload, qos = self.qos_level)

@@ -33,6 +33,10 @@ import device_cloud as iot
 running = True
 sending_telemetry = False
 
+# Return status once the cloud responds
+# Default is false
+cloud_response = False
+
 # Second intervals between telemetry
 TELEMINTERVAL = 4
 
@@ -133,7 +137,14 @@ if __name__ == "__main__":
                 for p in properties:
                     value = round(random.random()*1000, 2)
                     client.info("Publishing %s to %s", value, p)
-                    client.telemetry_publish(p, value)
+                    status = client.telemetry_publish(p, value, cloud_response)
+                    # Log response from cloud
+                    if cloud_response:
+                        if status == iot.STATUS_SUCCESS:
+                            client.log(iot.LOGINFO, "Telemetry Publish - SUCCESS")
+                        else:
+                            client.log(iot.LOGERROR, "Telemetry Publish - FAIL")
+
                 for a in attributes:
                     value = "".join(random.choice("abcdefghijklmnopqrstuvwxyz")
                                     for x in range(20))
