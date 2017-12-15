@@ -450,7 +450,6 @@ class Client(object):
             if not result:
                 return STATUS_NOT_FOUND
             return max(result)
-
         return self.handler.request_upload(file_path, upload_name, blocking,
                                            callback, timeout, file_global)
 
