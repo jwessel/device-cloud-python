@@ -516,3 +516,32 @@ class Client(object):
         telem = defs.PublishTelemetry(telemetry_name, value, timestamp)
         return self.handler.request_publish(telem, cloud_response)
 
+    def telemetry_read_last_sample(self, telemetry_name):
+        """
+        Read back last/current telemetry sample from the Cloud
+
+        Parameters
+          telemetry_name      (string) Key of property to publish
+
+        Returns:
+          STATUS_SUCCESS               Telemetry has been queued for publishing
+          value                        Value for last telemetry sample in cloud
+          timestamp                    Timestamp for the sample
+        """
+
+        return self.handler.handle_telemetry_get(telemetry_name)
+
+    def attribute_read_last_sample(self, attribute_name):
+        """
+        Read back last/current attribute sample from the Cloud
+
+        Parameters
+          attribute_name      (string) Key of property to publish
+
+        Returns:
+          STATUS_SUCCESS               Telemetry has been queued for publishing
+          value                        Value for last attribute sample in cloud
+          timestamp                    Timestamp for the sample
+        """
+
+        return self.handler.handle_attribute_get(attribute_name)

@@ -196,6 +196,9 @@ class Handler(object):
         # publishing, file transfer, etc.)
         self.work_queue = queue.Queue()
 
+        # store any requested data here
+        self.response = {}
+
     def action_deregister(self, action_name):
         """
         Disassociate any function or command from an action in the Cloud
@@ -307,7 +310,6 @@ class Handler(object):
                     context.verify_mode = ssl.CERT_REQUIRED
                     context.check_hostname = True
                     self.mqtt.tls_set_context(context)
-
 
             # status != bad_parameter or not_found
             if status == constants.STATUS_FAILURE:
@@ -467,6 +469,28 @@ class Handler(object):
         message = defs.OutMessage(mailbox_ack, message_desc)
         status = self.send(message)
         return status
+
+    def handle_attribute_get(self, attribute_name ):
+        command = tr50.create_attribute_current(self.config.key, attribute_name)
+        message_desc = "Reading current attribute..."
+        message = defs.OutMessage(command, message_desc)
+
+        self.pub_wait = True
+        status = self.send(message)
+
+        # Wait for response from sending to cloud
+        while self.pub_wait:
+            sleep(0.5)
+        # Convert to return codes
+        if self.pub_response:
+            ret = constants.STATUS_SUCCESS
+        else:
+            ret = constants.STATUS_FAILURE
+
+        value = self.response['attribute_current_value']
+        timestamp = self.response['attribute_current_timestamp']
+        return ret, value, timestamp
+
 
     def handle_file_download(self, download):
         """
@@ -661,7 +685,6 @@ class Handler(object):
                         self.pub_response = reply.get("success")
                         self.pub_wait = False
                     else:
-                        self.logger.warning("Topic numbers don't match up")
                         self.pub_wait = self.pub_response = False
 
                 # Check what kind of message this is a reply to
@@ -733,6 +756,28 @@ class Handler(object):
                         else:
                             sent_message.data.status = constants.STATUS_FAILURE
 
+                elif sent_command_type == TR50Command.property_current:
+                    # Recevied a reply for a ping request
+                    if reply.get("success"):
+                       params = reply.get("params")
+                       self.response['telemetry_current_value'] = params.get("value")
+                       self.response['telemetry_current_timestamp'] = params.get("ts")
+                    else:
+                        if -90008 in reply.get("errorCodes", []):
+                            sent_message.data.status = constants.STATUS_NOT_FOUND
+                        else:
+                            sent_message.data.status = constants.STATUS_FAILURE
+                elif sent_command_type == TR50Command.attribute_current:
+                    # Recevied a reply for a ping request
+                    if reply.get("success"):
+                       params = reply.get("params")
+                       self.response['attribute_current_value']  = params.get("value")
+                       self.response['attribute_current_timestamp']  = params.get("ts")
+                    else:
+                        if -90008 in reply.get("errorCodes", []):
+                            sent_message.data.status = constants.STATUS_NOT_FOUND
+                        else:
+                            sent_message.data.status = constants.STATUS_FAILURE
             status = constants.STATUS_SUCCESS
 
         return status
@@ -864,6 +909,31 @@ class Handler(object):
         message = defs.OutMessage(command, message_desc)
         status = self.send(message)
         return constants.STATUS_SUCCESS
+
+    def handle_telemetry_get(self, telem_name ):
+        """
+        Add data to publish queue and wait for cloud response
+        """
+        command = tr50.create_property_get_current(self.config.key, telem_name)
+        message_desc = "Reading current property..."
+        message = defs.OutMessage(command, message_desc)
+
+        self.pub_wait = True
+        status = self.send(message)
+
+        # Wait for response from sending to cloud
+        while self.pub_wait:
+            sleep(0.5)
+        # Convert to return codes
+        if self.pub_response:
+            ret = constants.STATUS_SUCCESS
+        else:
+            ret = constants.STATUS_FAILURE
+
+        value = self.response['telemetry_current_value']
+        timestamp = self.response['telemetry_current_timestamp']
+        return ret, value, timestamp
+
 
     def is_connected(self):
         """

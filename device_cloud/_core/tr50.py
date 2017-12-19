@@ -64,6 +64,7 @@ class TR50Command(object):
     mailbox_check = "mailbox.check"
     mailbox_update = "mailbox.update"
     property_publish = "property.publish"
+    property_current = "property.current"
     thing_find = "thing.find"
 
 
@@ -300,6 +301,18 @@ def create_property_publish(thing_key, key, value, timestamp=None, corr_id=None,
     cmd = {"command":TR50Command.property_publish}
     cmd["params"] = _generate_params(kwargs)
     return cmd
+
+def create_property_get_current( thing_key, key, timestamp=None):
+
+    kwargs = {
+        "thingKey":thing_key,
+        "key":key,
+        "ts":timestamp
+    }
+    cmd = {"command":TR50Command.property_current}
+    cmd["params"] = _generate_params(kwargs)
+    return cmd
+
 
 def create_thing_find(key):
     """
