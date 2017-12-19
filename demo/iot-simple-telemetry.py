@@ -34,7 +34,6 @@ running = True
 sending_telemetry = False
 
 # Return status once the cloud responds
-# Default is false
 cloud_response = False
 
 # Second intervals between telemetry
@@ -133,11 +132,26 @@ if __name__ == "__main__":
         counter += 1
         if counter >= TELEMINTERVAL:
             if sending_telemetry:
+
                 # Randomly generate telemetry and attributes to send
                 for p in properties:
+                    read_complete = 0
                     value = round(random.random()*1000, 2)
-                    client.info("Publishing %s to %s", value, p)
+                    client.info("Publishing Property: %s to %s", value, p)
                     status = client.telemetry_publish(p, value, cloud_response)
+                    while read_complete == 0:
+                        status, rvalue, timestamp = client.telemetry_read_last_sample(p)
+                        if status == iot.STATUS_SUCCESS:
+                            read_complete = 1
+                        sleep(0.5)
+
+                    client.info("Property read back from cloud:\n"
+                        "\tname %s\n"
+                        "\tstatus %s\n"
+                        "\tvalue %s\n"
+                        "\ttimestamp %s\n"
+                        %( p,status, rvalue, timestamp))
+
                     # Log response from cloud
                     if cloud_response:
                         if status == iot.STATUS_SUCCESS:
@@ -146,10 +160,24 @@ if __name__ == "__main__":
                             client.log(iot.LOGERROR, "Telemetry Publish - FAIL")
 
                 for a in attributes:
+                    read_complete = 0
                     value = "".join(random.choice("abcdefghijklmnopqrstuvwxyz")
                                     for x in range(20))
-                    client.log(iot.LOGINFO, "Publishing %s to %s", value, a)
+                    client.info("Publishing Attribute: %s to %s", value, a)
                     client.attribute_publish(a, value)
+                    while read_complete == 0:
+                        status, rvalue, timestamp = client.attribute_read_last_sample(a)
+                        if status == iot.STATUS_SUCCESS:
+                            read_complete = 1
+                        sleep(0.5)
+
+                    client.info("Attribute read back from cloud:\n"
+                        "\tname %s\n"
+                        "\tstatus %s\n"
+                        "\tvalue %s\n"
+                        "\ttimestamp %s\n"
+                        %(p, status, rvalue, timestamp))
+
 
             # Reset counter after sending telemetry
             counter = 0
