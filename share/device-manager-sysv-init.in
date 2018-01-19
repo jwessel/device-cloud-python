@@ -1,0 +1,55 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:		sshd
+# Required-Start:	$remote_fs $syslog $networking
+# Required-Stop:	$remote_fs $syslog
+# Default-Start:	2 3 4 5
+# Default-Stop:		1
+# Short-Description:	Device Manager App
+### END INIT INFO
+#
+# Do not configure this file. Edit /etc/default/dropbear instead!
+#
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/bin/device-manager.py
+NAME=device-manager.py
+DESC="Device manager"
+PIDFILE=/var/run/device-manager.pid
+USER=%user%
+DAEMON_OPTS=
+NO_START=0
+
+set -e
+
+test "$NO_START" = "0" || exit 0
+test -x "$DAEMON" || exit 0
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	start-stop-daemon -S --chuid "$USER" -p $PIDFILE \
+	  -x "$DAEMON" -- "$DAEMON_OPTS"
+	echo "$NAME."
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+	start-stop-daemon -K -x "$DAEMON" -p $PIDFILE
+	echo "$NAME."
+	;;
+  restart|force-reload)
+	echo -n "Restarting $DESC: "
+	start-stop-daemon -K -x "$DAEMON" -p $PIDFILE
+	sleep 1
+	start-stop-daemon -S --chuid "$USER" -p $PIDFILE \
+	  -x "$DAEMON" -- "$DAEMON_OPTS"
+	echo "$NAME."
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
