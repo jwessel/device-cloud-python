@@ -472,6 +472,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--app_id", help="Custom app id")
     parser.add_argument("-c", "--default_cfg_dir", help="Custom config directory")
     parser.add_argument("-f", "--config_file", help="Custom config file name (in config directory)")
+    parser.add_argument("-l", "--log_to_file", help="Log to file", action="store_true")
     args = parser.parse_args(sys.argv[1:])
 
     # Check for command line arguments
@@ -486,6 +487,10 @@ if __name__ == "__main__":
     client = iot.Client(app_id)
     client.config.config_dir = default_cfg_dir
     client.config.config_file = default_cfg_dir + "/" + config_file
+
+    # handle logging to file
+    if args.log_to_file:
+        client.config.log_file = "device_manager.log"
     client.initialize()
 
     config = config_load(default_cfg_dir)

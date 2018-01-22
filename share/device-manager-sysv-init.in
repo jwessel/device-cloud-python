@@ -7,43 +7,39 @@
 # Default-Stop:		1
 # Short-Description:	Device Manager App
 ### END INIT INFO
-#
-# Do not configure this file. Edit /etc/default/dropbear instead!
-#
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/bin/device-manager.py
-NAME=device-manager.py
+NAME=device_manager.py
+DAEMON_INTERPRETER=python
+DAEMON_CMD="${DAEMON_INTERPRETER} /usr/bin/${NAME}"
+DAEMON_OPTS=--log_to_file
 DESC="Device manager"
 PIDFILE=/var/run/device-manager.pid
 USER=%user%
-DAEMON_OPTS=
-NO_START=0
 
 set -e
 
-test "$NO_START" = "0" || exit 0
-test -x "$DAEMON" || exit 0
+do_start(){
+	echo -n "Starting $DESC: "
+	start-stop-daemon  --start --background --user $USER --chuid $USER -p $PIDFILE \
+	  --make-pidfile --startas ${DAEMON_CMD} -- "$DAEMON_OPTS"
+	echo "Status $?"
+}
+
+do_stop(){
+	echo -n "Stopping $DESC: "
+	start-stop-daemon -K -x "$DAEMON_INTERPRETER" -p $PIDFILE
+	echo "Status $?"
+}
 
 case "$1" in
-  start)
-	echo -n "Starting $DESC: "
-	start-stop-daemon -S --chuid "$USER" -p $PIDFILE \
-	  -x "$DAEMON" -- "$DAEMON_OPTS"
-	echo "$NAME."
-	;;
-  stop)
-	echo -n "Stopping $DESC: "
-	start-stop-daemon -K -x "$DAEMON" -p $PIDFILE
-	echo "$NAME."
+  start|stop)
+	do_${1}
 	;;
   restart|force-reload)
-	echo -n "Restarting $DESC: "
-	start-stop-daemon -K -x "$DAEMON" -p $PIDFILE
+	do_stop
 	sleep 1
-	start-stop-daemon -S --chuid "$USER" -p $PIDFILE \
-	  -x "$DAEMON" -- "$DAEMON_OPTS"
-	echo "$NAME."
+	do_start
 	;;
   *)
 	N=/etc/init.d/$NAME
