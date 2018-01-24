@@ -40,8 +40,6 @@ if sys.version_info.major == 2:
 else:
     builtin = "builtins"
 
-
-
 class ClientActionDeregister(unittest.TestCase):
     @mock.patch(builtin + ".open")
     @mock.patch("os.path.exists")
@@ -307,7 +305,8 @@ class ClientConnectFailure(unittest.TestCase):
     @mock.patch("os.path.exists")
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
-    def runTest(self, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
                 mock_open, mock_context):
         # Set up mocks
         mock_exists.side_effect = [True, True, True]
@@ -317,6 +316,7 @@ class ClientConnectFailure(unittest.TestCase):
         mock_read.side_effect = read_strings
         mock_mqtt.return_value = helpers.init_mock_mqtt()
         mock_mqtt.return_value.on_connect_rc = -1
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":0}
@@ -341,6 +341,8 @@ class ClientConnectFailure(unittest.TestCase):
         if self.client.handler.main_thread:
             self.client.handler.main_thread.join()
 
+
+
 class ClientConnectSuccess(unittest.TestCase):
     @mock.patch("ssl.SSLContext")
     @mock.patch(builtin + ".open")
@@ -348,7 +350,8 @@ class ClientConnectSuccess(unittest.TestCase):
     @mock.patch("os.path.exists")
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
-    def runTest(self, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self,  mock_gethostbyname, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
                 mock_open, mock_context):
         # Set up mocks
         mock_exists.side_effect = [True, True, True]
@@ -357,6 +360,7 @@ class ClientConnectSuccess(unittest.TestCase):
         mock_read = mock_open.return_value.__enter__.return_value.read
         mock_read.side_effect = read_strings
         mock_mqtt.return_value = helpers.init_mock_mqtt()
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":0}
@@ -390,7 +394,8 @@ class ClientDisconnectFailure(unittest.TestCase):
     @mock.patch("os.path.exists")
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
-    def runTest(self, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
                 mock_open, mock_context):
         # Set up mocks
         mock_exists.side_effect = [True, True, True]
@@ -400,6 +405,7 @@ class ClientDisconnectFailure(unittest.TestCase):
         mock_read.side_effect = read_strings
         mock_mqtt.return_value = helpers.init_mock_mqtt()
         mock_mqtt.return_value.on_disconnect_rc = -1
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":0}
@@ -467,7 +473,8 @@ class ClientFileDownloadAsyncSuccess(unittest.TestCase):
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
     @mock.patch("requests.get")
-    def runTest(self, mock_get, mock_mqtt, mock_sleep, mock_exists,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_get, mock_mqtt, mock_sleep, mock_exists,
                 mock_isfile, mock_isdir, mock_rename, mock_open, mock_context):
         # Set up mocks
         mock_exists.side_effect = [True, True, True, True]
@@ -481,6 +488,7 @@ class ClientFileDownloadAsyncSuccess(unittest.TestCase):
         mock_get.return_value.status_code = 200
         file_content = ["This ", "is ", "totally ", "a ", "file.\n",
                         "What ", "are ", "you ", "talking ", "about.\n"]
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         file_bytes = []
         for i in range(len(file_content)):
@@ -558,7 +566,8 @@ class ClientFileUploadAsyncSuccess(unittest.TestCase):
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
     @mock.patch("requests.post")
-    def runTest(self, mock_post, mock_mqtt, mock_sleep, mock_exists,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_post, mock_mqtt, mock_sleep, mock_exists,
                 mock_isfile, mock_open, mock_context):
         # Set up mocks
         mock_exists.side_effect = [True, True, True, True]
@@ -579,6 +588,7 @@ class ClientFileUploadAsyncSuccess(unittest.TestCase):
             return mock.Mock(status_code=200)
         mock_post.side_effect = post_func
         upload_callback = mock.Mock()
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":1}
@@ -1069,7 +1079,8 @@ class HandleActionExecCallbackSuccess(unittest.TestCase):
     @mock.patch("time.sleep")
     @mock.patch("device_cloud._core.defs.inspect")
     @mock.patch("paho.mqtt.client.Client")
-    def runTest(self, mock_mqtt, mock_inspect, mock_sleep, mock_exists,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_mqtt, mock_inspect, mock_sleep, mock_exists,
                 mock_isfile, mock_open, mock_context):
         # Set up mocks
         mock_exists.side_effect = [True, True, True]
@@ -1080,6 +1091,7 @@ class HandleActionExecCallbackSuccess(unittest.TestCase):
         mock_inspect.getargspec.return_value.args.__len__.return_value = 3
         mock_inspect.ismethod.return_value = False
         mock_mqtt.return_value = helpers.init_mock_mqtt()
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":1}
@@ -1178,7 +1190,8 @@ class HandlePublishAllTypes(unittest.TestCase):
     @mock.patch("os.path.exists")
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
-    def runTest(self, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
                 mock_open, mock_context):
         # Set up mocks
         mock_exists.side_effect = [True, True, True]
@@ -1187,6 +1200,7 @@ class HandlePublishAllTypes(unittest.TestCase):
         mock_read = mock_open.return_value.__enter__.return_value.read
         mock_read.side_effect = read_strings
         mock_mqtt.return_value = helpers.init_mock_mqtt()
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":1}
@@ -2153,7 +2167,8 @@ class ClientFileDownloadAsyncChecksumFail(unittest.TestCase):
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
     @mock.patch("requests.get")
-    def runTest(self, mock_get, mock_mqtt, mock_sleep, mock_exists,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_get, mock_mqtt, mock_sleep, mock_exists,
                 mock_isfile, mock_isdir, mock_rename, mock_open, mock_remove,
                 mock_context):
         # Set up mocks
@@ -2168,6 +2183,7 @@ class ClientFileDownloadAsyncChecksumFail(unittest.TestCase):
         mock_get.return_value.status_code = 200
         file_content = ["This ", "is ", "totally ", "a ", "file.\n",
                         "What ", "are ", "you ", "talking ", "about.\n"]
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         file_bytes = []
         for i in range(len(file_content)):
@@ -2244,7 +2260,8 @@ class ClientFileDownloadAsyncRequestFail(unittest.TestCase):
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
     @mock.patch("requests.get")
-    def runTest(self, mock_get, mock_mqtt, mock_sleep, mock_exists,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_get, mock_mqtt, mock_sleep, mock_exists,
                 mock_isfile, mock_isdir, mock_rename, mock_open, mock_remove,
                 mock_context):
         # Set up mocks
@@ -2259,6 +2276,7 @@ class ClientFileDownloadAsyncRequestFail(unittest.TestCase):
         mock_get.return_value.status_code = 500
         file_content = ["This ", "is ", "totally ", "a ", "file.\n",
                         "What ", "are ", "you ", "talking ", "about.\n"]
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         file_bytes = []
         for i in range(len(file_content)):
@@ -2331,7 +2349,8 @@ class ClientConnectMissingHost(unittest.TestCase):
     @mock.patch("os.path.exists")
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
-    def runTest(self, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
                 mock_open):
         # Set up mocks
         mock_exists.side_effect = [True, True, True]
@@ -2340,6 +2359,7 @@ class ClientConnectMissingHost(unittest.TestCase):
         mock_read = mock_open.return_value.__enter__.return_value.read
         mock_read.side_effect = read_strings
         mock_mqtt.return_value = helpers.init_mock_mqtt()
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":0}
@@ -2364,7 +2384,8 @@ class ClientConnectMissingPort(unittest.TestCase):
     @mock.patch("os.path.exists")
     @mock.patch("time.sleep")
     @mock.patch("paho.mqtt.client.Client")
-    def runTest(self, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
+    @mock.patch("socket.gethostbyname")
+    def runTest(self, mock_gethostbyname, mock_mqtt, mock_sleep, mock_exists, mock_isfile,
                 mock_open):
         # Set up mocks
         mock_exists.side_effect = [True, True, True]
@@ -2373,6 +2394,7 @@ class ClientConnectMissingPort(unittest.TestCase):
         mock_read = mock_open.return_value.__enter__.return_value.read
         mock_read.side_effect = read_strings
         mock_mqtt.return_value = helpers.init_mock_mqtt()
+        mock_gethostbyname.return_value = ["1.1.1.1"]
 
         # Initialize client
         kwargs = {"loop_time":1, "thread_count":0}

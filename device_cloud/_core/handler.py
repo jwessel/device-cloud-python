@@ -290,6 +290,22 @@ class Handler(object):
             end_time = current_time + timedelta(seconds=timeout)
             self.state = constants.STATE_CONNECTING
 
+            # Add network check and poll here while it is not
+            # available.  Otherwise, the service will exit which is
+            # not ideal if you do not have a service monitor like
+            # systemd.
+            test_network = True
+            self.logger.info("Checking for network connectivity...")
+            while test_network:
+                try:
+                    ret = socket.gethostbyname(self.config.cloud.host)
+                    if ret:
+                        self.logger.info("Network is active" )
+                        test_network = False
+                except socket.error as err:
+                    self.logger.error("Network error detected: %s" % str(err))
+                    sleep(1)
+
             # Start a secure connection if using a secure port and the cert file
             # is available
             if self.config.cloud.port in constants.SECURE_PORTS:
