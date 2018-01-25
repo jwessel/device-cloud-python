@@ -24,6 +24,8 @@ import signal
 import sys
 import os
 from time import sleep
+from datetime import datetime
+
 
 head, tail = os.path.split(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, head)
@@ -138,7 +140,12 @@ if __name__ == "__main__":
                     read_complete = 0
                     value = round(random.random()*1000, 2)
                     client.info("Publishing Property: %s to %s", value, p)
-                    status = client.telemetry_publish(p, value, cloud_response)
+
+                    # timestamps can be added.  The API will use the
+                    # current time if it is not explicitly stated
+                    # ts = datetime(2017, 01, 01,11,34,22,11)
+                    ts = datetime.now()
+                    status = client.telemetry_publish(p, value, cloud_response, timestamp=ts)
                     while read_complete == 0:
                         status, rvalue, timestamp = client.telemetry_read_last_sample(p)
                         if status == iot.STATUS_SUCCESS:
