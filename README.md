@@ -2,6 +2,10 @@ Wind River® Helix™ Device Cloud Python Agent
 ===============================
 [![Build Status](https://travis-ci.com/Wind-River/device-cloud-python.svg?token=q5RoFNe28qXM6phPRKSk&branch=master)](https://travis-ci.com/Wind-River/device-cloud-python)
 
+Documentation:
+--------------
+[Helix Device Cloud Documentation](https://knowledge.windriver.com/?cid=hdcx)
+
 Description:
 ------------
 Helix Device Cloud (HDC) is a cloud/device platform that accelerates
