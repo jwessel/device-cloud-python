@@ -509,6 +509,8 @@ class Client(object):
                                      If true, the return status indicates if
                                      it was sent to the cloud. Otherwise,
                                      the return status is if it was queued.
+          timestamp           (string) Optional datetime format timestamp to
+                                       override the timestamp applied by the API
         Returns:
           STATUS_SUCCESS             Telemetry has been queued for publishing
         """
