@@ -312,9 +312,11 @@ class OutTracker(dict):
         """
         Retrieve the topic an MID is sending on
         """
-
-        return self.mid_tracker.pop(mid)
-
+        try:
+            pop_id = self.mid_tracker.pop(mid)
+        except KeyError:
+            raise KeyError("Message {} not found.".format(mid))
+        return pop_id
 
 class Publish(object):
     """
