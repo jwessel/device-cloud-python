@@ -65,7 +65,17 @@ def parameter_action(client, params):
     """
     message = params.get("message", "")
     print(message)
-    return (iot.STATUS_SUCCESS, "")
+
+
+    # example on how to use out parameters.  Note: completion
+    # variables DO NOT need to be defined in the thing definiton in
+    # the cloud.
+    p = {}
+    p['response'] = "this is an example completion variable"
+    p['response2'] = "Another completion variable"
+    p['response3'] = "Yet another completion variable"
+
+    return (iot.STATUS_SUCCESS, "", p)
 
 def file_upload(client, params, user_data):
     """
