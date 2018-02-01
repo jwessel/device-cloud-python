@@ -34,7 +34,7 @@ if pyver < (2,7,9) or (pyver > (3,0,0) and pyver < (3,4,0)):
 
 setup(
     name='device_cloud',
-    version='17.12.06',
+    version='18.02.01',
     description='Python library for Wind River\'s Helix Device Cloud',
     author='Wind River Systems',
     author_email='',
@@ -68,7 +68,7 @@ setup(
     url='http://www.windriver.com/products/helix/',
     license='Apache License, Version 2.0',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 2.7',
