@@ -493,6 +493,8 @@ class Handler(object):
 
         self.pub_wait = True
         status = self.send(message)
+        value = None
+        timestamp = None
 
         # Wait for response from sending to cloud
         while self.pub_wait:
@@ -503,8 +505,13 @@ class Handler(object):
         else:
             ret = constants.STATUS_FAILURE
 
-        value = self.response['attribute_current_value']
-        timestamp = self.response['attribute_current_timestamp']
+        # make sure the key exists or there will be a KeyError
+        # exception
+        if 'attribute_current_value' in self.response.keys():
+            value = self.response['attribute_current_value']
+
+        if 'attribute_current_timestamp' in self.response.keys():
+            timestamp = self.response['attribute_current_timestamp']
         return ret, value, timestamp
 
 
@@ -717,7 +724,7 @@ class Handler(object):
                     else:
                         if -90008 in reply.get("errorCodes", []):
                             sent_message.data.status = constants.STATUS_NOT_FOUND
-                        else:
+                        elif sent_message.data != None:
                             sent_message.data.status = constants.STATUS_FAILURE
 
                 elif sent_command_type == TR50Command.file_put:
@@ -781,7 +788,7 @@ class Handler(object):
                     else:
                         if -90008 in reply.get("errorCodes", []):
                             sent_message.data.status = constants.STATUS_NOT_FOUND
-                        else:
+                        elif sent_message.data != None:
                             sent_message.data.status = constants.STATUS_FAILURE
                 elif sent_command_type == TR50Command.attribute_current:
                     # Recevied a reply for a ping request
@@ -792,7 +799,7 @@ class Handler(object):
                     else:
                         if -90008 in reply.get("errorCodes", []):
                             sent_message.data.status = constants.STATUS_NOT_FOUND
-                        else:
+                        elif  sent_message.data != None:
                             sent_message.data.status = constants.STATUS_FAILURE
             status = constants.STATUS_SUCCESS
 
@@ -936,6 +943,8 @@ class Handler(object):
 
         self.pub_wait = True
         status = self.send(message)
+        value = None
+        timestamp = None
 
         # Wait for response from sending to cloud
         while self.pub_wait:
@@ -946,8 +955,13 @@ class Handler(object):
         else:
             ret = constants.STATUS_FAILURE
 
-        value = self.response['telemetry_current_value']
-        timestamp = self.response['telemetry_current_timestamp']
+        # make sure the key exists or there will be a KeyError
+        # exception
+        if 'telemetry_current_value' in self.response.keys():
+            value = self.response['telemetry_current_value']
+
+        if 'telemetry_current_timestamp' in self.response.keys():
+            timestamp = self.response['telemetry_current_timestamp']
         return ret, value, timestamp
 
 
