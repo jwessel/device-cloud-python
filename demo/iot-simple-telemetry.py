@@ -26,7 +26,6 @@ import os
 from time import sleep
 from datetime import datetime
 
-
 head, tail = os.path.split(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, head)
 
@@ -55,17 +54,26 @@ def toggle_telem():
     Turns Telemetry on or off (callback)
     """
     global sending_telemetry
+
+    # set an out parameter with the current state of the alarm
+    # Note: completion variables DO NOT need to be defined in the
+    # thing definiton in the cloud.
+    p = {}
+
     sending_telemetry = not sending_telemetry
     if sending_telemetry:
-        client.alarm_publish("alarm_1", 0)
+        client.alarm_publish("telemetry_alarm", 0)
+        p['alarm_state'] = "ON"
     else:
-        client.alarm_publish("alarm_1", 1)
-    msgstr = "{} sending telemetry".format("Now" if sending_telemetry else \
-                                           "No longer")
+        client.alarm_publish("telemetry_alarm", 1)
+        p['alarm_state'] = "OFF"
+
+    # publish an event log
+    msgstr = "Telemetry {} ".format(p['alarm_state'])
     client.info(msgstr)
     client.event_publish(msgstr)
-    return (iot.STATUS_SUCCESS, "Turned On" if sending_telemetry \
-            else "Turned Off")
+
+    return (iot.STATUS_SUCCESS, "", p)
 
 def quit_me():
     """
@@ -144,7 +152,9 @@ if __name__ == "__main__":
                     # timestamps can be added.  The API will use the
                     # current time if it is not explicitly stated
                     # ts = datetime(2017, 01, 01,11,34,22,11)
-                    ts = datetime.now()
+                    # Recommend using utc timestamps.  The cloud
+                    # expects utc when rendering overlays with alarms.
+                    ts = datetime.utcnow()
                     status = client.telemetry_publish(p, value, cloud_response, timestamp=ts)
                     while read_complete == 0:
                         status, rvalue, timestamp = client.telemetry_read_last_sample(p)
