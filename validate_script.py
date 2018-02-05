@@ -14,6 +14,7 @@
 '''
 
 """
+This is a sample change.
 A script that executes an application which publishes known values to the Cloud
 with the purpose of validating the abilities of the host to run the device_cloud agent.
 In the Cloud there must be a thing definition with:
