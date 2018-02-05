@@ -232,6 +232,8 @@ def rest_exec_upload(session_id, thing_key):
     """
     Test REST calls by uploading a file
     """
+    loop_done = False
+    tries = 10
     upload_stat = method_exec(session_id, thing_key, "file_upload",
                               {"file_name":"validate_exec.txt"})
     if upload_stat.get("success") is True:
@@ -240,43 +242,29 @@ def rest_exec_upload(session_id, thing_key):
         print("upload failed to complete successfully - FAIL")
 
     # Check that a file was successfully uploaded to the Cloud
-    tries = 10
-    while tries > 0:
+    while tries > 0 and loop_done == False:
         tries -= 1
         time.sleep(0.5)
+
         # Check for success status for method_exec command
         if upload_stat.get("success") == True:
             files_info = get_files(session_id, thing_key)
-            loop_done = False
+
             # Check that the file was actually uploaded
             if files_info.get("success") is True:
+
                 # there may be more than one file returned
-                file_results = files_info["params"]["result"]
-                for file in file_results:
+                for file in files_info["params"]["result"]:
                     if file["fileName"]  == "validate_exec.txt":
-                        print("File uploaded with method_exec: validate_exec.txt - OK")
+                        print("-->File uploaded with method_exec: validate_exec.txt - OK")
                         loop_done = True
-                        break
-                if loop_done == True:
-                    break
-                elif tries == 0:
-                    print("File could not be found in cloud (method_exec)- FAIL")
-                    fails.append("Finding file in cloud (method_exec)")
-                    break
-                # If haven't hit a break, then try again:
-                upload_stat = method_exec(session_id, thing_key, "file_upload",
-                                          {"file_name":"validate_exec.txt"})
-            else:
-                if tries == 0:
-                    print("method_exec was successful but no files found - FAIL")
-                    fails.append("File list retrieval (method_exec)")
-                    break
-        else:
+
+            # check for the file
             upload_stat = method_exec(session_id, thing_key, "file_upload",
                                       {"file_name":"validate_exec.txt"})
-            if tries == 0:
-                print("method_exec failied for upload - FAIL")
-                fails.append("method_exec upload")
+    if tries == 0:
+        print("method_exec failied for upload - FAIL")
+        fails.append("method_exec upload")
 
 def rest_exec_download(session_id, thing_key):
     """

@@ -22,11 +22,7 @@ import socket
 import device_cloud 
 from time import sleep
 from threading import Thread
-
-if sys.version_info.major == 2:
-    import queue as queue
-else:
-    import queue
+import queue
 
 queue = queue.Queue()
 prop_name = "property"
