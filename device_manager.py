@@ -33,6 +33,7 @@ import uuid
 import argparse
 import tarfile
 import socket
+from datetime import datetime
 
 from device_cloud import osal
 from device_cloud import ota_handler
@@ -462,6 +463,18 @@ def remote_access(client, params):
         client.error(str(error))
         return (iot.STATUS_FAILURE, str(error))
 
+def sign_of_life(client, params):
+    """
+    Callback to respond to the cloud.  Used for a simple sign of life.
+    This callback takes no inbound parameters, and uses an out
+    paramter.
+    """
+    p = {}
+    p['response'] = "acknowledged"
+    ts = datetime.utcnow()
+    p['time_stamp'] =  ts.strftime("%Y-%m-%d %H:%M:%S")
+    return (iot.STATUS_SUCCESS, "", p)
+
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, sighandler)
     if osal.POSIX:
@@ -554,6 +567,9 @@ if __name__ == "__main__":
                                 (runtime_dir, ota, [app_id, default_cfg_dir, config_file]))
 
     action_register_conditional(client, "quit", quit_me, \
+                                config.actions_enabled.reset_agent)
+
+    action_register_conditional(client, "ping", sign_of_life, \
                                 config.actions_enabled.reset_agent)
 
     # Connect to Cloud
