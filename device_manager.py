@@ -486,6 +486,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--default_cfg_dir", help="Custom config directory")
     parser.add_argument("-f", "--config_file", help="Custom config file name (in config directory)")
     parser.add_argument("-l", "--log_to_file", help="Log to file", action="store_true")
+    parser.add_argument("-d", "--delay_start", help="Delay start in seconds")
     args = parser.parse_args(sys.argv[1:])
 
     # Check for command line arguments
@@ -495,6 +496,10 @@ if __name__ == "__main__":
         default_cfg_dir = args.default_cfg_dir
     if args.config_file:
         config_file = args.config_file
+    if args.delay_start:
+        delay_start = (int)(args.delay_start)
+        if isinstance(delay_start, int) == True:
+            sleep(delay_start)
 
     # Initialize client called 'device_manager_py'
     client = iot.Client(app_id)
@@ -503,7 +508,7 @@ if __name__ == "__main__":
 
     # handle logging to file
     if args.log_to_file:
-        client.config.log_file = "device_manager.log"
+        client.config.log_file = client.config.config_dir + "/" + "device_manager.log"
     client.initialize()
 
     config = config_load(default_cfg_dir)
