@@ -1,0 +1,17 @@
+#!/bin/bash
+# This script belongs in /usr/bin
+
+key=/install.tar.gz
+target=/opt/container/cube-gg/rootfs/greengrass
+
+
+if [ ! -e $key -o ! -e $target ] ; then
+    "Error: provisioning failed"
+fi
+
+c3 stop cube-gg
+tar -C $target -xvf $key
+echo "Starting cube-gg"
+c3 start cube-gg
+
+echo "AWS Greengrass keys installed"

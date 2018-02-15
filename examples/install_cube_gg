@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# This script belongs in /usr/bin
+INST=/opt/container/cube-gw/rootfs/root/cube-gg.tar.bz2
+
+if [ ! -e /root/cube-gg.tar.bz2 ] ; then
+    echo "ERROR: Cannot locate container for deployment"
+    exit 1
+fi
+
+if [ -e /opt/container/cube-gg ] ; then
+    echo "ERROR: cube-gg already deployed"
+    exit 1
+fi
+
+c3 add $INST
+
+if [ -f /opt/container/cube-gg/rootfs/greengrass/certs/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem ] ; then
+    cp /opt/container/cube-gg/rootfs/greengrass/certs/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem /opt/container/cube-gg/rootfs/greengrass/certs/root.ca.pem
+fi
