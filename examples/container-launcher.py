@@ -114,7 +114,7 @@ def file_download(client, params, user_data):
             message = "No file name or destination given"
 
     if result == iot.STATUS_SUCCESS:
-        cmd = "/usr/bin/provision_gg"
+        cmd = "./provision_gg"
         output = {}
         try:
             p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
@@ -155,7 +155,27 @@ def deploy_cube_gg(client, params):
     will print the message present in the "message" parameter send by the cloud
     when the action is executed.
     """
-    cmd = "/usr/bin/install_cube_gg"
+    cmd = "./install_cube_gg"
+    output = {}
+    if cmd:
+        try:
+            p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            i = 0
+            for line in out.split(os.linesep):
+                i = i + 1
+                output["%03d" % i] = line
+        except Exception as e:
+            print("Error in run_cmd: %s" % e)
+    return (iot.STATUS_SUCCESS, "", output)
+
+def remove_cube_gg(client, params):
+    """
+    Action callback that takes two parameters, client and action params, that
+    will print the message present in the "message" parameter send by the cloud
+    when the action is executed.
+    """
+    cmd = "./remove_cube_gg"
     output = {}
     if cmd:
         try:
@@ -260,6 +280,7 @@ if __name__ == "__main__":
     client.action_register_callback("basic_action", basic_action)
     client.action_register_callback("send_event", send_event)
     client.action_register_callback("deploy_cube_gg", deploy_cube_gg)
+    client.action_register_callback("remove_cube_gg", remove_cube_gg)
     client.action_register_callback("run_cmd", run_cmd)
     client.action_register_callback("print_message", parameter_action)
     client.action_register_callback("file_download", file_download, ".")

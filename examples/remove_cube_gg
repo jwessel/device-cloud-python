@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ ! -e /opt/container/cube-gg ] ; then
+    echo "ERROR: cube-gg is already removed"
+    exit 1
+fi
+
+c3 stop cube-gg
+c3 del cube-gg

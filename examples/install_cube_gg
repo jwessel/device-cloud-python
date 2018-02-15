@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# This script belongs in /usr/bin
 INST=/opt/container/cube-gw/rootfs/root/cube-gg.tar.bz2
 
-if [ ! -e /root/cube-gg.tar.bz2 ] ; then
+if [ ! -e $INST ] ; then
     echo "ERROR: Cannot locate container for deployment"
     exit 1
 fi
@@ -15,6 +14,25 @@ fi
 
 c3 add $INST
 
+# Fixups
+
+
 if [ -f /opt/container/cube-gg/rootfs/greengrass/certs/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem ] ; then
     cp /opt/container/cube-gg/rootfs/greengrass/certs/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem /opt/container/cube-gg/rootfs/greengrass/certs/root.ca.pem
 fi
+
+sed -i -e 's#^ExecStart=.*#ExecStart=/rungreengrass#' /opt/container/cube-gg/rootfs/lib/systemd/system/app.service
+
+cat<<EOF > /opt/container/cube-gg/rootfs/rungreengrass
+#!/bin/sh
+mount -o remount,rw /sys/fs/cgroup
+for e in cpu devices freezer memory pids ; do
+   if [ ! -e /sys/fs/cgroup/\$e ] ; then
+      mkdir /sys/fs/cgroup/\$e
+      mount -t cgroup -o \$e cgroup /sys/fs/cgroup/\$e
+   fi
+done
+/greengrass/ggc/core/greengrassd start
+EOF
+
+chmod 755 /opt/container/cube-gg/rootfs/rungreengrass
